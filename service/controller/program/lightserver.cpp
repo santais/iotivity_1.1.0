@@ -32,7 +32,7 @@
 
 #include "OCPlatform.h"
 #include "OCApi.h"
-#include "ResourceTypes.h"
+#include "resource_types.h"
 
 using namespace OC;
 using namespace std;

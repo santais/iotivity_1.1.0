@@ -63,26 +63,9 @@ static inline bool VERIFY_MEMORY_ALLOCATION(void* object)
   }
   return true;
 }
-/**
- * Handle to an OC Resource
- */
-typedef void * OCResourceTypeT;
 
-typedef void * Value;
 
 typedef struct OCBaseResourceT OCBaseResourceT;
-
-/**
-  * Data type structure to assign a type
-  * to an attribute
-  */
-typedef enum DataType
-{
-    INT     = 0,
-    DOUBLE  = (1 << 0),
-    BOOL    = (2 << 0),
-    STRING  = (3 << 0)
-} DataType;
 
 /**
   * 8 bit variable declaring a port type
@@ -104,36 +87,6 @@ typedef struct OCIOPort
     uint8_t pin;
 } OCIOPort;
 
-typedef union ResourceData
-{
-    double d;
-    int i;
-    char* str;
-    bool b;
-} ResourceData;
-
-/**
-  * Structure to hold the attributes for a resource. Multiple attributes
-  * are allowed, linked together using a linked list
-  */
-  /*
-typedef struct OCAttributeT
-{
-    OCAttributeT* next;
-
-    char* name;
-
-    struct ValueType
-    {
-        OCRepPayloadPropType dataType;
-
-        OCRepPayloadValue data;
-
-    } value;
-
-    OCIOPort* port;
-} OCAttributeT;
-*/
 
 /**
   * The application calls this callback, when a PUT request has been initiated. The user
