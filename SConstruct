@@ -79,3 +79,7 @@ if target_os == 'arduino':
 # to install the generated pc file into custome prefix location
 env.UserInstallTargetPCFile('iotivity.pc', 'iotivity.pc')
 
+if target_os == 'arduino':
+	# Build the Arduino API
+	SConscript(build_dir + 'arduino_build/SConscript')
+

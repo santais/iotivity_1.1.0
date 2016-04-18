@@ -84,5 +84,5 @@ elif target_os == 'darwin':
 	# Build C stack's unit tests.
 	SConscript('unit_tests.scons')
 
-elif target_os == 'arduino':
-	SConscript('csdk/stack/samples/arduino/SimpleClientServer/ocserver/SConscript')
+#elif target_os == 'arduino':
+#	SConscript('csdk/stack/samples/arduino/SimpleClientServer/ocserver/SConscript')
