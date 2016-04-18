@@ -58,7 +58,6 @@ namespace OIC { namespace Service
     const std::string HOSTING_TAG = "/hosting";
     const auto HOSTING_TAG_SIZE = HOSTING_TAG.size();
 
-
     enum class SceneState
     {
         START_SCENE,
@@ -77,14 +76,6 @@ namespace OIC { namespace Service
         typedef std::unique_ptr<const Controller> ConstPtr;
 
 	public:
-        /**
-          * @brief Default Constructor
-          *
-          * @param platformInfo Info regarding the platform
-          * @param deviceInfo   Char* naming the device
-          */
-        //Controller(OCPlatformInfo &platformInfo, OCDeviceInfo &deviceInfo);
-
         /**
          * @brief getInstance
          * @return
@@ -135,7 +126,6 @@ namespace OIC { namespace Service
           * Mutex locking a discovered resource until it has been added to the map.
           */
         std::mutex m_resourceMutex;
-        std::condition_variable m_cond;
 
         /**
           * DiscoveryTask used to cancel and observe the discovery process.
@@ -213,45 +203,11 @@ namespace OIC { namespace Service
         OCStackResult stopRD();
 
         /**
-         * @brief Callback when getting the remote attributes
-         *
-         * @param attr          Attributes received from the server
-         * @param eCode         Result code of the initiate request
-         */
-        void getAttributesCallback(const RCSResourceAttributes& attr, int eCode);
-
-        /**
          * @brief printAttributes Prints the attributes of a resource
          *
          * @param attr          Attributes to be printed
          */
         void printAttributes(const RCSResourceAttributes& attr);
-
-
-		/**
-		  * Sets the device information
-		  *
-          * @param deviceInfo   Container with all platform info.
-		  */
-        void setDeviceInfo(OCDeviceInfo &deviceInfo);
-
-		/**
-          * Sets the device information. Uses default parameters.
-		  */
-		void setDeviceInfo();
-
-		/**
-		  *	Sets the platform information.
-          *
-          * @param platformInfo Container with all platform info
-		  */
-        void setPlatformInfo(OCPlatformInfo &platformInfo);
-
-		/**
-		  *	Sets the platform information. Uses default parameters
-		  */
-		void setPlatformInfo();
-
 
         /**
           *  @brief Disovery of resources

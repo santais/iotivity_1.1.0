@@ -17,10 +17,6 @@ namespace OIC { namespace Service
         m_resourceObjectStateCallback(std::bind(&Controller::resourceObjectStateCallback, this, std::placeholders::_1,
                                            std::placeholders::_2, std::placeholders::_3))
 	{
-        // Set default platform and device information
-        Controller::setDeviceInfo();
-        //Controller::setPlatformInfo();
-
         this->configurePlatform();
 
         // Set up the scene and the collection
@@ -32,24 +28,6 @@ namespace OIC { namespace Service
         m_sceneStop = m_sceneCollection->addNewScene("Stop Conference");
         m_sceneState = SceneState::STOP_SCENE;
     }
-
-    /**
-      * @brief Default Constructor
-      *
-      * @param platformInfo Info regarding the platform
-      * @param deviceInfo   Char* naming the device
-      */
-    /*Controller::Controller(OCPlatformInfo &platformInfo, OCDeviceInfo &deviceInfo) :
-        m_discoverCallback(std::bind(&Controller::foundResourceCallback, this, std::placeholders::_1)),
-        m_resourceList(),
-        m_RDStarted(false)
-    {
-        // Set the platform and device information
-        Controller::setDeviceInfo(deviceInfo);
-        Controller::setPlatformInfo(platformInfo);
-
-        this->configurePlatform();
-    }*/
 
     /**
      * @brief getInstance
@@ -139,12 +117,6 @@ namespace OIC { namespace Service
         };
 
         OCPlatform::Configure(cfg);
-
-        /*OCStackResult result = OCInit(NULL, 0, OC_CLIENT_SERVER);
-        if(result != OC_STACK_OK)
-        {
-            std::cerr << "Failed to initialize OIC server" << std::endl;
-        }*/
     }
 
     /**
@@ -171,13 +143,6 @@ namespace OIC { namespace Service
         {
             std::cout << "\t\t interface " << interface << std::endl;
         }
-        // DEBUG
-        // Get the attibutes.
-        /*if(this->isResourceLegit(resource))
-        {
-            resource->getRemoteAttributes(std::bind(&Controller::getAttributesCallback, this, std::placeholders::_1,
-                                                    std::placeholders::_2));
-        }*/
     }
 
     /**
@@ -277,26 +242,6 @@ namespace OIC { namespace Service
     }
 
     /**
-     * @brief Callback when getting the remote attributes
-     *
-     * @param attr          Attributes received from the server
-     * @param eCode         Result code of the initiate request
-     */
-    void Controller::getAttributesCallback(const RCSResourceAttributes& attr, int eCode)
-    {
-        std::cout << __func__ << std::endl;
-
-        if (eCode == OC_STACK_OK)
-        {
-            this->printAttributes(attr);
-        }
-        else
-        {
-            std::cerr << "Get attributes request failed with code: " << eCode << std::endl;
-        }
-    }
-
-    /**
      * @brief printAttributes Prints the attributes of a resource
      *
      * @param attr          Attributes to be printed
@@ -317,58 +262,6 @@ namespace OIC { namespace Service
                 std::cout << "\t\t Value: " << attribute.value().toString() << std::endl;
             }
         }
-    }
-
-    /**
-      * Sets the device information
-      *
-      * @param deviceInfo 			Container with all platform info.
-      */
-    void Controller::setDeviceInfo(OCDeviceInfo &deviceInfo)
-    {
-        OC::OCPlatform::registerDeviceInfo(deviceInfo);
-    }
-
-    /**
-      * Sets the device information. Uses default parameters.
-      */
-    void Controller::setDeviceInfo()
-    {
-        OCDeviceInfo deviceInfo;
-        deviceInfo.deviceName = "OIC Controller";
-
-        OC::OCPlatform::registerDeviceInfo(deviceInfo);
-    }
-
-    /**
-      *	Sets the platform information.
-      *
-      * @param platformInfo 		Container with all platform info
-      */
-    void Controller::setPlatformInfo(OCPlatformInfo &platformInfo)
-    {
-        OC::OCPlatform::registerPlatformInfo(platformInfo);
-    }
-
-    /**
-      *	Sets the platform information. Uses default parameters
-      */
-    void Controller::setPlatformInfo()
-    {
-        OCPlatformInfo platformInfo;
-
-        platformInfo.dateOfManufacture = "01/03/16";
-        platformInfo.firmwareVersion = "1.0";
-        platformInfo.hardwareVersion = "1.0";
-        platformInfo.manufacturerName = "Schneider Electric ECP Controller";
-        platformInfo.manufacturerUrl = "controller";
-        platformInfo.modelNumber = "1.0";
-        platformInfo.operatingSystemVersion = "1.0";
-        platformInfo.platformID = "1";
-        platformInfo.platformVersion = "1.0";
-        platformInfo.supportUrl = "controller";
-
-        OC::OCPlatform::registerPlatformInfo(platformInfo);
     }
 
     /**
@@ -591,9 +484,9 @@ namespace OIC { namespace Service
             }
             break;
 
-            /*default:
+            default:
                 std::cout << "Unsupported resource state" << std::endl; 
-            break;*/
+            break;
         }
     }
 
