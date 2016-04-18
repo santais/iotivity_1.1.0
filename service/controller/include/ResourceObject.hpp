@@ -21,13 +21,11 @@ enum class ResourceDeviceType
     UNKNOWN_DEVICE
 };
 
-
 enum class ResourceObjectState
 {
     CACHE_CHANGED,
     PRESENCE_CHANGD
 };
-
 
 class ResourceObject
 {
@@ -38,7 +36,8 @@ public:
     /**
      * Callback to be invoked when a resource changes it state.
      */
-    typedef std::function< void(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &type) > ResourceObjectCallback;
+    typedef std::function< void(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &type) > ResourceObjectCacheCallback;
+    typedef std::function< void(const ResourceState &state, const std::string &uri, const std::string &address) > ResourceObjectStateCallback;
 
 public:
 
@@ -114,7 +113,8 @@ private:
     /**
      * @brief m_reosurceObjectCallback Callback to invoke the controller when a changed in the resource occurs
      */
-    ResourceObjectCallback m_resourceObjectCallback;
+    ResourceObjectCacheCallback m_resourceObjectCacheCallback;
+    ResourceObjectStateCallback m_resourceObjectStateCallback;
 
 private:
 
@@ -130,6 +130,14 @@ private:
      * @param attrs               The new set of attributes
      */
     void cacheUpdateCallback(const RCSResourceAttributes attrs);
+
+
+    /**
+     * @brief stateChangedCallback Called when the state of the resource object changes
+     *
+     * @param state     New state of the resource
+     */
+    void stateChangedCallback(const ResourceState state);
 
     /**
      * @brief remoteAttributesGetcallback Attributes of the called resource
@@ -150,6 +158,14 @@ private:
      * @brief printAttributes     Prints the attributes.
      */
     void printAttributes(RCSResourceAttributes attrs);
+
+
+    /**
+     * @biref Prints the current resource state
+     *
+     * @param The new resource state
+     */
+    void printResourceState(ResourceState state);
 
     /**
      * @brief setResourceDeviceType Find the resource device type and sets it.

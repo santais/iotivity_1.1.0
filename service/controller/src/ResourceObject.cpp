@@ -10,13 +10,15 @@ ResourceObject::ResourceObject(RCSRemoteResourceObject::Ptr remoteResource)
 
     // Set the callbacks
     m_resourceObject->startCaching(std::bind(&ResourceObject::cacheUpdateCallback, this, std::placeholders::_1));
+    m_resourceObject->startMonitoring(std::bind(&ResourceObject::stateChangedCallback, this, std::placeholders::_1));
     //m_resourceObject->getRemoteAttributes(std::bind(&ResourceObject::remoteAttributesGetCallback, this, std::placeholders::_1));
 
     // Find device type
     setResourceDeviceType(std::move(remoteResource->getTypes()), m_resourceDeviceType);
 
     // Set the controller
-    m_resourceObjectCallback = Controller::getInstance()->getControllerResourceObjCallback();
+    m_resourceObjectCacheCallback = Controller::getInstance()->getControllerResourceCacheObjCallback();
+    m_resourceObjectStateCallback = Controller::getInstance()->getControllerResourceStateObjCallback();
 }
 
 /**
@@ -78,7 +80,7 @@ std::string ResourceObject::convertResourceDeviceTypeToString(const ResourceDevi
  */
 void ResourceObject::startCaching()
 {
-    if(!m_resourceObject->isCaching())
+    if(!m_resourceObject->isCaching() && m_resourceObject->isObservable())
     {
         m_resourceObject->startCaching(std::bind(&ResourceObject::cacheUpdateCallback, this, std::placeholders::_1));
     }
@@ -139,16 +141,47 @@ void ResourceObject::cacheUpdateCallback(const RCSResourceAttributes attrs)
     m_attrs = attrs;
 
     // Send the respond to the Controller
-    if(m_resourceObjectCallback)
+    if(m_resourceObjectCacheCallback)
     {
         std::cout << "\n=================================" << std::endl;
         std::cout << "Cached changed for device: " << ResourceObject::convertResourceDeviceTypeToString(m_resourceDeviceType) << std::endl;
         this->printAttributes(attrs);
-        m_resourceObjectCallback(std::move(attrs), ResourceObjectState::CACHE_CHANGED, m_resourceDeviceType);
+        m_resourceObjectCacheCallback(std::move(attrs), ResourceObjectState::CACHE_CHANGED, m_resourceDeviceType);
     }
     else
     {
-        std::cerr << "ResourceObjectCall has not been initiaized" << std::endl;
+        std::cerr << "ResourceObjectCallback has not been initiaized" << std::endl;
+    }
+}
+
+/**
+ * @brief stateChangedCallback Called when the state of the resource object changes
+ *
+ * @param state     New state of the resource
+ */
+void ResourceObject::stateChangedCallback(const ResourceState state)
+{
+    std::lock_guard<mutex> lock(mutex);
+    std::cout << __func__ << std::endl;
+
+    // Send the response to the Controller
+    if(m_resourceObjectStateCallback)
+    {
+    	std::cout << "\n=================================" << std::endl;
+    	std::cout << "State changed for device: " << ResourceObject::convertResourceDeviceTypeToString(m_resourceDeviceType) << std::endl;
+    	this->printResourceState(state);
+    	try 
+    	{
+	    	m_resourceObjectStateCallback(state, m_resourceObject->getUri(), m_resourceObject->getAddress());
+    	}
+    	catch (RCSException e)
+    	{
+    		std::cerr << "Error at getting uri + address: " << e.what() << std::endl;
+    	}
+    }
+    else
+    {
+    	std::cerr << "ResourceObjectCallback has not been initialized" << std::endl;
     }
 }
 
@@ -199,6 +232,38 @@ void ResourceObject::printAttributes(RCSResourceAttributes attrs)
         }
     }
      std::cout << "=================================\n" << std::endl;
+}
+
+/**
+ * @biref Prints the current resource state
+ *
+ * @param The new resource state
+ */
+void ResourceObject::printResourceState(ResourceState state)
+{	
+	std::cout << "\t New state is: ";
+	switch(state)
+	{
+		case ResourceState::NONE:
+			std::cout << "NONE" << std::endl;
+		break;
+		case ResourceState::REQUESTED:
+			std::cout << "REQUESTED" << std::endl;
+		break;
+		case ResourceState::ALIVE: 
+			std::cout << "ALIVE" << std::endl;
+		break;
+		case ResourceState::LOST_SIGNAL:
+			std::cout << "LOST_SIGNAL" << std::endl;
+		break;
+		case ResourceState::DESTROYED:
+			std::cout << "DESTROYED" << std::endl;
+		break;	
+		default:
+			std::cout << "UNKNOWN TYPE" << std::endl;
+		break;
+	}
+	std::cout << "=================================\n" << std::endl;
 }
 
 /**

@@ -95,6 +95,8 @@ public:
         OCStackResult result = OCPlatform::registerResource(m_resourceHandle, resourceURI,
                 resourceTypeName, resourceInterface, cb, OC_DISCOVERABLE | OC_OBSERVABLE);
 
+        result = OCPlatform::bindInterfaceToResource(m_resourceHandle, OC_RSRVD_)
+
         if (OC_STACK_OK != result)
         {
             cout << "Resource creation was unsuccessful\n";

@@ -6,163 +6,16 @@ namespace OIC { namespace Service
 
     constexpr unsigned int CONTROLLER_POLLING_DISCOVERY_MS = 5000; // in milliseconds
 
-/********************************** DiscoveryMangerInfo *************************************/
-
-    /**
-     * @brief Controller::DiscoveryManagerInfo::DiscoveryManagerInfo
-     */
-    DiscoveryManagerInfo::DiscoveryManagerInfo()
-    {
-        ;
-    }
-
-    /**
-     * @brief Controller::DiscoveryManagerInfo::DiscoveryManagerInfo
-     * @param host
-     * @param uri
-     * @param types
-     * @param cb
-     */
-    DiscoveryManagerInfo::DiscoveryManagerInfo(const string&host, const string& uri, const std::vector<std::string>& types, FindCallback cb)
-        : m_host(host),
-          m_relativeUri(uri),
-          m_resourceTypes(std::move(types)),
-          m_discoveryCb(std::move(cb)) {;}
-
-    /**
-     * @brief Controller::DiscoveryManagerInfo::discover
-     */
-    void DiscoveryManagerInfo::discover() const
-    {
-        for(auto& type : m_resourceTypes)
-        {
-            OC::OCPlatform::findResource(m_host, m_relativeUri + "?rt=" + type, CT_IP_USE_V4, m_discoveryCb, QualityOfService::NaQos);
-        }
-    }
-
-
-/********************************** DsicoveryManager *************************************/
-
-    /**
-     * @brief Controller::DiscoveryManager::DiscoveryManager
-     * @param time_ms
-     */
-    DiscoveryManager::DiscoveryManager(cbTimer time_ms) : m_timerMs(time_ms), m_isRunning(false) {}
-
-
-    /**
-     * @brief Controller::DiscoveryManager::~DiscoveryManager
-     */
-    DiscoveryManager::~DiscoveryManager()
-    {
-
-    }
-
-    /**
-     * @brief isSearching
-     * @return
-     */
-    bool DiscoveryManager::isSearching() const
-    {
-        return m_isRunning;
-    }
-
-    /**
-     * @brief cancel
-     */
-    void DiscoveryManager::cancel()
-    {
-        std::lock_guard<std::mutex> lock(m_discoveryMutex);
-        if(m_isRunning)
-        {
-           m_isRunning = false;
-        }
-    }
-
-    /**
-     * @brief setTimer
-     * @param time_ms
-     */
-    void DiscoveryManager::setTimer(const cbTimer time_ms)
-    {
-        m_timerMs = time_ms;
-    }
-
-    /**
-     * @brief discoverResource
-     * @param types
-     * @param cb
-     * @param host
-     */
-    void DiscoveryManager::discoverResource(const std::string& uri, const std::vector<std::string>& types, FindCallback cb,
-                                std::string host )
-    {
-        std::lock_guard<std::mutex> lock(m_discoveryMutex);
-
-        m_isRunning = true;
-
-        DiscoveryManagerInfo discoveryInfo(host, uri.empty() ? OC_RSRVD_WELL_KNOWN_URI : uri, types,
-                                           std::move(cb));
-
-        m_discoveryInfo = std::move(discoveryInfo);
-
-        m_discoveryInfo.discover();
-
-        m_timer.post(m_timerMs, std::bind(&DiscoveryManager::timeOutCB, this));
-    }
-
-    /**
-     * @brief discoverResource
-     * @param type
-     * @param cb
-     * @param host
-     */
-    void DiscoveryManager::discoverResource(const std::string& uri, const std::string& type, FindCallback cb,
-                                std::string host)
-    {
-        std::lock_guard<std::mutex> lock(m_discoveryMutex);
-
-        m_isRunning = true;
-
-        DiscoveryManagerInfo discoveryInfo(host, uri.empty() ? OC_RSRVD_WELL_KNOWN_URI : uri, std::vector<std::string> { type },
-                                           std::move(cb));
-
-        m_discoveryInfo = std::move(discoveryInfo);
-
-        m_discoveryInfo.discover();
-
-        // DEBUG
-        std::cout << "Starting timer for DiscoveryManager with timer: " << m_timerMs << std::endl;
-        m_timer.post(m_timerMs, std::bind(&DiscoveryManager::timeOutCB, this));
-    }
-
-
-    /**
-     * @brief timeOutCB
-     * @param id
-     */
-    void DiscoveryManager::timeOutCB()
-    {
-        // Check if the mutex is free
-        std::lock_guard<std::mutex> lock(m_discoveryMutex);
-
-        // Only restartt he callback timer if the process has not been stopped.
-        if(m_isRunning)
-        {
-            m_discoveryInfo.discover();
-
-            m_timer.post(m_timerMs, std::bind(&DiscoveryManager::timeOutCB, this));
-        }
-    }
-
 /****************************************** Controller ************************************************/
 
     Controller::Controller() :
         m_discoverCallback(std::bind(&Controller::foundResourceCallback, this, std::placeholders::_1)),
         m_resourceList(),
         m_RDStarted(false),
-        m_resourceObjectCallback(std::bind(&Controller::resourceObjectCallback, this, std::placeholders::_1, std::placeholders::_2,
-                                           std::placeholders::_3))
+        m_resourceObjectCacheCallback(std::bind(&Controller::resourceObjectCacheCallback, this, std::placeholders::_1, std::placeholders::_2,
+                                           std::placeholders::_3)),
+        m_resourceObjectStateCallback(std::bind(&Controller::resourceObjectStateCallback, this, std::placeholders::_1,
+                                           std::placeholders::_2, std::placeholders::_3))
 	{
         // Set default platform and device information
         Controller::setDeviceInfo();
@@ -332,9 +185,14 @@ namespace OIC { namespace Service
      *                                          in the specific resource
      * @return
      */
-    ResourceObject::ResourceObjectCallback Controller::getControllerResourceObjCallback()
+    ResourceObject::ResourceObjectCacheCallback Controller::getControllerResourceCacheObjCallback()
     {
-        return this->m_resourceObjectCallback;
+        return this->m_resourceObjectCacheCallback;
+    }
+
+    ResourceObject::ResourceObjectStateCallback Controller::getControllerResourceStateObjCallback()
+    {
+        return this->m_resourceObjectStateCallback;
     }
 
      /**
@@ -360,6 +218,15 @@ namespace OIC { namespace Service
                 std::cout << "\tAdded device: " << resource->getUri() + resource->getAddress() << std::endl;
                 std::cout << "\tDevice successfully added to the list" << std::endl;
             }
+        }
+
+        // Check if the discoverymanager exist in the discovery map
+        discoveryMapItr mapItr = m_discoveryTaskMap.find(resource->getUri() + resource->getAddress());
+        if(mapItr != m_discoveryTaskMap.end())
+        {
+            std::cout << "\n\tFound discoverytask in map. Cancelling discovery and removing it" << std::endl;
+            mapItr->second->cancel();
+            m_discoveryTaskMap.erase(mapItr);
         }
      }
 
@@ -590,73 +457,6 @@ namespace OIC { namespace Service
     }
 
     /**
-     * @brief getCacheUpdateCallback Callback invoked when a changed of the paramters
-     * of the resource occurs.
-     *
-     * @param attr The current attribute values of the resource
-     */
-    void Controller::cacheUpdateCallback(const RCSResourceAttributes& attr)
-    {
-        std::cout << __func__ << std::endl;
-
-        this->printAttributes(attr);
-
-        // Check if the attribute is "state" and is "on"
-        for(auto const &attribute : attr)
-        {
-            // Simple test scenario turning on/off the LED.
-            const std::string key = attribute.key();
-            const RCSResourceAttributes::Value value = attribute.value();
-            if(key == "state" && value.toString() == "true")
-            {
-                // TODO: Find a way to distinguish a button resource.
-                //       This could potential be any resource with type "state".
-                if(m_sceneState == SceneState::START_SCENE)
-                {
-                    std::cout << "\tSetting Scene State: STOP_SCENE\n";
-                    m_sceneState = SceneState::STOP_SCENE;
-                    m_sceneStop->execute(std::bind(&Controller::executeSceneCallback, this, std::placeholders::_1));
-                }
-                else
-                {
-                    std::cout << "\tSetting Scene State: START_SCENE\n";
-                    m_sceneState = SceneState::START_SCENE;
-                    m_sceneStart->execute(std::bind(&Controller::executeSceneCallback, this, std::placeholders::_1));
-                }
-            }
-        }
-    }
-
-    /**
-     * @brief stateChangeCallback Callback invoked when a change in the resources'
-     * state is encountered
-     *
-     * @param state         New state of the resource
-     */
-    void Controller::stateChangeCallback(ResourceState state)
-    {
-        std::cout << __func__ << std::endl;
-
-        // Lock mutex to ensure no resource is added to the list while erasing
-        std::lock_guard<std::mutex> lock(m_resourceMutex);
-        //bool resetDiscoveryManager(false);
-
-        for (auto iterator = m_resourceList.begin(); iterator != m_resourceList.end();)
-        {
-            ResourceState newState = iterator->second->getRemoteResourceObject()->getState();
-            if (newState == ResourceState::LOST_SIGNAL || newState == ResourceState::DESTROYED)
-            {
-                std::cout << "Removing resource: " << iterator->second->getRemoteResourceObject()->getUri() << std::endl;
-                m_resourceList.erase(iterator++);
-            }
-            else
-            {
-                iterator++;
-            }
-        }
-    }
-
-    /**
       * @brief Looks up the list of known resources type
       *
       * @param resource     Pointer to the resource object
@@ -730,45 +530,72 @@ namespace OIC { namespace Service
      * @param resource      The resource that has been changed
      * @param state         The type of change that occured
      */
-    void Controller::resourceObjectCallback(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &deviceType)
+    void Controller::resourceObjectCacheCallback(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &deviceType)
     {
-        switch(state)
+        // If the device is a button, search for the current state
+        if(deviceType == ResourceDeviceType::OIC_BUTTON)
         {
-        case ResourceObjectState::CACHE_CHANGED:
-
-            // If the device is a button, search for the current state
-            if(deviceType == ResourceDeviceType::OIC_BUTTON)
+            for(auto const &attr : attrs)
             {
-                for(auto const &attr : attrs)
+                // Simple test scenario turning on/off the LED.
+                const std::string key = attr.key();
+                const RCSResourceAttributes::Value value = attr.value();
+                if(key == "state" && value.toString() == "true")
                 {
-                    // Simple test scenario turning on/off the LED.
-                    const std::string key = attr.key();
-                    const RCSResourceAttributes::Value value = attr.value();
-                    if(key == "state" && value.toString() == "true")
+                    if(m_sceneState == SceneState::START_SCENE)
                     {
-                        if(m_sceneState == SceneState::START_SCENE)
-                        {
-                            std::cout << "\nSetting Scene State: STOP_SCENE\n";
-                            m_sceneState = SceneState::STOP_SCENE;
-                            m_sceneStop->execute(std::bind(&Controller::executeSceneCallback, this, std::placeholders::_1));
-                        }
-                        else
-                        {
-                            std::cout << "\nSetting Scene State: START_SCENE\n";
-                            m_sceneState = SceneState::START_SCENE;
-                            m_sceneStart->execute(std::bind(&Controller::executeSceneCallback, this, std::placeholders::_1));
-                        }
+                        std::cout << "\nSetting Scene State: STOP_SCENE\n";
+                        m_sceneState = SceneState::STOP_SCENE;
+                        m_sceneStop->execute(std::bind(&Controller::executeSceneCallback, this, std::placeholders::_1));
+                    }
+                    else
+                    {
+                        std::cout << "\nSetting Scene State: START_SCENE\n";
+                        m_sceneState = SceneState::START_SCENE;
+                        m_sceneStart->execute(std::bind(&Controller::executeSceneCallback, this, std::placeholders::_1));
                     }
                 }
             }
-
-
-            break;
-
-        case ResourceObjectState::PRESENCE_CHANGD:
-
-            break;
         }
     }
+
+
+    /**
+     * @brief State called when the resource's state changes
+     *
+     * @param state New state of the resource
+     * @param resourceKey Key of the resource to find it in the map
+     */
+    void Controller::resourceObjectStateCallback(const ResourceState &state, const std::string &uri, const std::string &address)
+    {
+        std::cout << __func__ << std::endl;
+
+        switch(state)
+        {
+            case ResourceState::ALIVE:
+
+            break;
+            case ResourceState::LOST_SIGNAL:
+            {
+                std::cout << "Lost Signal " << std::endl;
+                // Find the resource and remove it from the list
+                ResourceKey resourceKey = uri + address;
+                m_resourceList.erase(resourceKey);
+
+                // Start a unicast discovery to the resource
+                RCSDiscoveryManager::DiscoveryTask::Ptr newDiscoveryTask = 
+                    Controller::discoverResource(m_discoverCallback, RCSAddress::unicast(address));
+                
+                //std::pair<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr> discoveryEntry(resourceKey, newDiscoveryTask);
+                m_discoveryTaskMap.emplace(std::make_pair(resourceKey, std::move(newDiscoveryTask)));
+            }
+            break;
+
+            /*default:
+                std::cout << "Unsupported resource state" << std::endl; 
+            break;*/
+        }
+    }
+
 
 } }

@@ -24,7 +24,6 @@
 #ifndef _CONTROLLER_H_
 #define _CONTROLLER_H_
 
-
 #include <atomic>
 #include <functional>
 #include <list>
@@ -49,13 +48,12 @@
 // Scene-manager
 #include "SceneList.h"
 
-
 namespace OIC { namespace Service
 {
 
-	using namespace OC;
-	using namespace OIC;
-	using namespace OIC::Service;
+    using namespace OC;
+    using namespace OIC;
+    using namespace OIC::Service;
 
     const std::string HOSTING_TAG = "/hosting";
     const auto HOSTING_TAG_SIZE = HOSTING_TAG.size();
@@ -67,136 +65,12 @@ namespace OIC { namespace Service
         STOP_SCENE
     };
 
-    /**
-     * @brief The DiscoveryManagerInfo class
-     */
-    class DiscoveryManagerInfo
-    {
-    public:
-        /**
-         * @brief DiscoveryManagerInfo
-         */
-        DiscoveryManagerInfo();
-
-        /**
-         * @brief DiscoveryManagerInfo
-         * @param host
-         * @param uri
-         * @param types
-         * @param cb
-         */
-        DiscoveryManagerInfo(const std::string& host, const std::string& uri,
-                             const std::vector<std::string>& types, FindCallback cb);
-
-
-        /**
-         * @brief discover
-         */
-        void discover() const;
-
-    private:
-        std::string m_host;
-        std::string m_relativeUri;
-        std::vector<std::string> m_resourceTypes;
-        FindCallback m_discoveryCb;
-    };
-
-    /**
-     * @brief The DiscoveryManager class
-     *
-     * Discovers resource on the network
-     */
-    class DiscoveryManager
-    {
-        typedef long long cbTimer;
-
-    public:
-        /**
-         * @brief DiscoveryManager
-         * @param time_ms
-         */
-        DiscoveryManager(cbTimer timeMs);
-        DiscoveryManager()                                          = default;
-        DiscoveryManager(const DiscoveryManager& dm)                = default;
-        DiscoveryManager(DiscoveryManager&& dm)                     = default;
-        DiscoveryManager& operator=(const DiscoveryManager& dm)     = default;
-        DiscoveryManager& operator=(DiscoveryManager&& dm)          = default;
-
-        ~DiscoveryManager();
-
-        /**
-         * @brief isSearching
-         * @return
-         */
-        bool isSearching() const;
-
-        /**
-         * @brief cancel
-         */
-        void cancel();
-
-        /**
-         * @brief setTimer
-         * @param time_ms
-         */
-        void setTimer(cbTimer time_ms);
-
-        /**
-         * @brief discoverResource
-         * @param types
-         * @param cb
-         * @param host
-         */
-        void discoverResource(const std::string& uri, const std::vector<std::string>& types, FindCallback cb,
-                              std::string host = "");
-
-        /**
-         * @brief discoverResource
-         * @param type
-         * @param cb
-         * @param host
-         */
-        void discoverResource(const std::string& uri, const std::string& type, FindCallback cb,
-                              std::string host = "");
-    private:
-        /**
-         * @brief m_timer
-         */
-        ExpiryTimer m_timer;
-
-        /**
-         * @brief m_timerMs
-         */
-        cbTimer m_timerMs;
-
-        /**
-         * @brief m_isRunning
-         */
-        bool m_isRunning;
-
-        /**
-         * @brief m_discoveryInfo
-         */
-        DiscoveryManagerInfo m_discoveryInfo;
-
-        /**
-         * @brief m_cancelMutex
-         */
-        std::mutex m_discoveryMutex;
-
-    private:
-
-        /**
-         * @brief timeOutCB
-         * @param id
-         */
-        void timeOutCB();
-    };
-
     class Controller
 	{
     private:
-		typedef std::string ResourceKey;
+		    typedef std::string ResourceKey;
+
+        typedef std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr>::const_iterator discoveryMapItr;
 
     public:
         typedef std::unique_ptr<Controller> Ptr;
@@ -248,7 +122,8 @@ namespace OIC { namespace Service
          *                                          in the specific resource
          * @return
          */
-        ResourceObject::ResourceObjectCallback getControllerResourceObjCallback();
+        ResourceObject::ResourceObjectCacheCallback getControllerResourceCacheObjCallback();
+        ResourceObject::ResourceObjectStateCallback getControllerResourceStateObjCallback();
 
     private:
 		/**
@@ -267,6 +142,7 @@ namespace OIC { namespace Service
           */
         RCSDiscoveryManager::DiscoveryTask::Ptr m_discoveryTask;
         RCSDiscoveryManager::ResourceDiscoveredCallback m_discoverCallback;
+        std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr> m_discoveryTaskMap;
 
         /**
           * Boolean to indicate if the RD is started already
@@ -294,7 +170,8 @@ namespace OIC { namespace Service
         /**
           * Callback inovked during a change in a registered resource;
           */
-        ResourceObject::ResourceObjectCallback m_resourceObjectCallback;
+        ResourceObject::ResourceObjectCacheCallback m_resourceObjectCacheCallback;
+        ResourceObject::ResourceObjectStateCallback m_resourceObjectStateCallback;
 
 
 	private:
@@ -403,23 +280,6 @@ namespace OIC { namespace Service
         RCSDiscoveryManager::DiscoveryTask::Ptr discoverResource(RCSDiscoveryManager::ResourceDiscoveredCallback cb,
             const std::vector<std::string> &types, RCSAddress address = RCSAddress::multicast(), const std::string& uri = std::string(""));
 
-
-        /**
-         * @brief getCacheUpdateCallback Callback invoked when a changed of the paramters
-         * of the resource occurs.
-         *
-         * @param attr The new attributes of the resource
-         */
-        void cacheUpdateCallback(const RCSResourceAttributes& attr);
-
-        /**
-         * @brief stateChangeCallback Callback invoked when a change in the resources'
-         * state is encountered
-         *
-         * @param state         New state of the resource
-         */
-        void stateChangeCallback(ResourceState state);
-
         /**
           * @brief Looks up the list of known resources type
           *
@@ -451,7 +311,16 @@ namespace OIC { namespace Service
          * @param resource      The resource that has been changed
          * @param state         The type of change that occured
          */
-        void resourceObjectCallback(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &type);
+        void resourceObjectCacheCallback(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &type);
+
+
+        /**
+         * @brief State called when the resource's state changes
+         *
+         * @param state New state of the resource
+         * @param resourceKey Key of the resource to find it in the map
+         */
+        void resourceObjectStateCallback(const ResourceState &state, const std::string &uri, const std::string &address);
 
 	protected:
 
