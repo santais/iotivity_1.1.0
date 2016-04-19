@@ -103,6 +103,12 @@ public:
             cout << "\tResource creation is successful with resource handle : " << m_resourceHandle
                     << endl;
         }
+
+        // Enable prsence
+        if(OCStartPresence(OC_MAX_PRESENCE_TTL_SECONDS - 1) != OC_STACK_OK)
+        {
+            std::cerr << "Unable to start presence" << std::endl;
+        }
     }
 
     OCResourceHandle getHandle()

@@ -21,12 +21,21 @@
 #include "ocbaseresource.h"
 #include "resource_types.h"
 #include "easysetup.h"
+#include "rd_client.h"
 
 static const int DELAY_TIME_INPUT_THREAD = 1000;      // ms
+//static const int DELAY_RD_DISCOVERY = 3000;
 
 // Blinking LED
 static const char LED_PIN = 13;
 static const char TEST_LED_PIN = 5; // PWM Pin
+
+// RD variables
+//static char g_rdAddress[MAX_ADDR_STR_SIZE];
+//static uint16_t g_rdPort;
+
+// Light Resource
+OCBaseResourceT *g_lightResource;
 
 /**
  * @var g_OnBoardingSucceeded
@@ -39,6 +48,12 @@ static bool g_OnBoardingSucceeded = false;
  * @brief This variable will be set if Provisioning is successful
  */
 static bool g_ProvisioningSucceeded = false;
+
+/**
+ * @var g_rdInitialized
+ * @brief is set once a RD has been discovered
+ */
+//static bool g_rdInitialized = false;
 
 
 #define TAG "ArduinoServer"
@@ -253,7 +268,7 @@ void createLightResource()
 
     OIC_LOG(DEBUG, TAG, "Creating resource");
     // Light resource
-    OCBaseResourceT *resourceLight = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
+    g_lightResource = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
                                               (OC_DISCOVERABLE | OC_OBSERVABLE), lightIOHandler);
     resourceLight->name = "Mark's Light";
 
@@ -272,11 +287,31 @@ void createLightResource()
     brightness.i = 255;
     addAttribute(&resourceLight->attribute, "brightness", brightness, INT, &portLight);
 
-    printResource(resourceLight);
+    //printResource(resourceLight);
+
+    // Start presence of the resource
+    if(OCStartPresence(OC_MAX_PRESENCE_TTL_SECONDS - 1) != OC_STACK_OK)
+    {
+        OIC_LOG(ERROR, TAG, "Unable to start presence server");
+    }
 
     OIC_LOG(DEBUG, TAG, "Finished setup");
 }
 
+// Not yet implemented for arduino
+/*
+int rdDiscoverCallback(char addr[MAX_ADDR_STR_SIZE], uint16_t port)
+{
+    OIC_LOG_V(DEBUG, TAG, "RD Address is: %s : %i", address, port);
+
+    g_rdAddress = addr;
+    g_rdPort = port;
+
+    // Anounce to the API that a RD has been found
+    g_rdInitialized = true;
+
+    return 0;
+}*/
 
 //The setup function is called once at startup of the sketch
 void setup()
@@ -301,6 +336,18 @@ void loop()
     delay(DELAY_TIME_INPUT_THREAD);
     //checkInputThread();
 
+    /*if(g_ProvisioningSucceeded)
+    {
+        // Connect to RD server
+        while(!g_rdInitialized)
+        {
+            OCRDDiscover(rdDiscoverCallback);
+            delay(DELAY_RD_DISCOVERY);
+        }
+
+        OCRDPublish(g_rdAddress, g_rdPort, 1, g_lightResource.handle);
+        g_ProvisioningSucceeded = false;
+    }*/
     // This call displays the amount of free SRAM available on Arduino
     //PrintArduinoMemoryStats();
 

@@ -2738,3 +2738,5 @@ service/things-manager/unittests/FactorySetCollection.h
 service/things-manager/unittests/MaintenanceCollection.h
 service/things-manager/unittests/ThingsManagerTest.cpp
 service/things-manager/unittests/UnitTestHelper.h
+service/controller/include/DiscoveryManager.h
+service/controller/src/DiscoveryManager.cpp

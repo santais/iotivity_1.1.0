@@ -29,19 +29,7 @@
 namespace OIC { namespace Service
 {
 
-    using namespace OC;
-    using namespace OIC;
-    using namespace OIC::Service;
-
-    const std::string HOSTING_TAG = "/hosting";
-    const auto HOSTING_TAG_SIZE = HOSTING_TAG.size();
-
-
-    enum class SceneState
-    {
-        START_SCENE,
-        STOP_SCENE
-    };
+    typedef long long cbTimer;
 
     /**
      * @brief The DiscoveryManagerInfo class
@@ -62,7 +50,7 @@ namespace OIC { namespace Service
          * @param cb
          */
         DiscoveryManagerInfo(const std::string& host, const std::string& uri,
-                             const std::vector<std::string>& types, FindCallback cb);
+                             const std::vector<std::string>& types, FindCallback cb, OCConnectivityType connectivityType);
 
 
         /**
@@ -75,6 +63,7 @@ namespace OIC { namespace Service
         std::string m_relativeUri;
         std::vector<std::string> m_resourceTypes;
         FindCallback m_discoveryCb;
+        OCConnectivityType m_connectivityType;
     };
 
     /**
@@ -84,19 +73,18 @@ namespace OIC { namespace Service
      */
     class DiscoveryManager
     {
-        typedef long long cbTimer;
 
     public:
         /**
          * @brief DiscoveryManager
          * @param time_ms
          */
+        DiscoveryManager()                                            = default;
         DiscoveryManager(cbTimer timeMs);
-        DiscoveryManager()                                          = default;
-        DiscoveryManager(const DiscoveryManager& dm)                = default;
-        DiscoveryManager(DiscoveryManager&& dm)                     = default;
-        DiscoveryManager& operator=(const DiscoveryManager& dm)     = default;
-        DiscoveryManager& operator=(DiscoveryManager&& dm)          = default;
+        //DiscoveryManager(const DiscoveryManager& dm)                = default;
+        //DiscoveryManager(DiscoveryManager&& dm)                     = default;
+        //DiscoveryManager& operator=(const DiscoveryManager& dm)     = default;
+        //DiscoveryManager& operator=(DiscoveryManager&& dm)          = default;
 
         ~DiscoveryManager();
 
@@ -124,7 +112,7 @@ namespace OIC { namespace Service
          * @param host
          */
         void discoverResource(const std::string& uri, const std::vector<std::string>& types, FindCallback cb,
-                              std::string host = "");
+                              std::string host = "", OCConnectivityType connectivityType = CT_DEFAULT);
 
         /**
          * @brief discoverResource
@@ -133,7 +121,7 @@ namespace OIC { namespace Service
          * @param host
          */
         void discoverResource(const std::string& uri, const std::string& type, FindCallback cb,
-                              std::string host = "");
+                              std::string host = "", OCConnectivityType connectivityType = CT_DEFAULT);
     private:
         /**
          * @brief m_timer
@@ -168,6 +156,8 @@ namespace OIC { namespace Service
          */
         void timeOutCB();
     };
+} }
+
 
 
 #endif // DISCOVERYMANAGER

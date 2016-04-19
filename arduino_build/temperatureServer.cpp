@@ -22,7 +22,7 @@
 #include "resource_types.h"
 #include <stdlib.h>
 
-static const int DELAY_TIME_INPUT_THREAD = 1000;      // ms
+static const int DELAY_TIME_INPUT_THREAD = 100;      // ms
 
 void temperatureIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResourceHandle handle, bool *underObservation);
 void checkInputThread();
@@ -217,7 +217,7 @@ void temperatureIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResour
         double temperature = reading / TEMPERATURE_CONSTANT;
 
         dtostrf(temperature, 5, 2, attribute->str);
-        Serial.println(attribute->str);
+        //Serial.println(attribute->str);
     }
 }
 
@@ -230,6 +230,8 @@ void setup()
     // Note : This will initialize Serial port on Arduino at 115200 bauds
     OIC_LOG_INIT();
     OIC_LOG(DEBUG, TAG, ("OCServer is starting..."));
+
+    OCStackResult result = OC_STACK_ERROR;
 
 
     // Connect to Ethernet or WiFi network
@@ -270,10 +272,10 @@ void setup()
 
     temperatureResource->name = "LM35 Temperature Sensor";
 
-    addType(temperatureResource, OIC_TYPE_TEMPERATURE);
+    result = addType(temperatureResource, OIC_TYPE_TEMPERATURE);
 
     // READ only interface
-    addInterface(temperatureResource, OC_RSRVD_INTERFACE_READ);
+    result = addInterface(temperatureResource, OC_RSRVD_INTERFACE_READ);
 
     // Setup ADC
     analogReference(INTERNAL1V1);
@@ -283,7 +285,18 @@ void setup()
     value.next = NULL;
     value.str = "00.00";
     value.type = OCREP_PROP_STRING;
-    addAttribute(&temperatureResource->attribute, &value);
+    result = addAttribute(&temperatureResource->attribute, &value);
+
+    result = OCStartPresence(OC_MAX_PRESENCE_TTL_SECONDS - 1);
+
+    if(result != OC_STACK_OK)
+    {
+        OIC_LOG(ERROR, TAG, "Failed to initialize resources");
+        return;
+    } else
+    {
+        OIC_LOG(INFO, TAG, "Initialization successful");
+    }
 
     //printResource(temperatureResource);
 }

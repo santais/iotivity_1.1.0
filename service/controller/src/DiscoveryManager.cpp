@@ -1,7 +1,7 @@
-#include "discoverymanager.h"
+#include "DiscoveryManager.h"
 
+namespace OIC { namespace Service
 {
-
     constexpr unsigned int CONTROLLER_POLLING_DISCOVERY_MS = 5000; // in milliseconds
 
 /********************************** DiscoveryMangerInfo *************************************/
@@ -21,11 +21,16 @@
      * @param types
      * @param cb
      */
-    DiscoveryManagerInfo::DiscoveryManagerInfo(const string&host, const string& uri, const std::vector<std::string>& types, FindCallback cb)
+    DiscoveryManagerInfo::DiscoveryManagerInfo(const string&host, const string& uri, const std::vector<std::string>& types, FindCallback cb,
+                                               OCConnectivityType connectivityType)
         : m_host(host),
           m_relativeUri(uri),
           m_resourceTypes(std::move(types)),
-          m_discoveryCb(std::move(cb)) {;}
+          m_discoveryCb(std::move(cb)),
+          m_connectivityType(connectivityType)
+    {
+        ;
+    }
 
     /**
      * @brief Controller::DiscoveryManagerInfo::discover
@@ -34,7 +39,7 @@
     {
         for(auto& type : m_resourceTypes)
         {
-            OC::OCPlatform::findResource(m_host, m_relativeUri + "?rt=" + type, CT_IP_USE_V4, m_discoveryCb, QualityOfService::NaQos);
+            OC::OCPlatform::findResource(m_host, m_relativeUri + "?rt=" + type, m_connectivityType, m_discoveryCb, QualityOfService::NaQos);
         }
     }
 
@@ -45,7 +50,7 @@
      * @brief Controller::DiscoveryManager::DiscoveryManager
      * @param time_ms
      */
-    DiscoveryManager::DiscoveryManager(cbTimer time_ms) : m_timerMs(time_ms), m_isRunning(false) {}
+    DiscoveryManager::DiscoveryManager(cbTimer time_ms) : m_timerMs(time_ms), m_isRunning(false){}
 
 
     /**
@@ -93,14 +98,14 @@
      * @param host
      */
     void DiscoveryManager::discoverResource(const std::string& uri, const std::vector<std::string>& types, FindCallback cb,
-                                std::string host )
+                                std::string host, OCConnectivityType connectivityType)
     {
         std::lock_guard<std::mutex> lock(m_discoveryMutex);
 
         m_isRunning = true;
 
         DiscoveryManagerInfo discoveryInfo(host, uri.empty() ? OC_RSRVD_WELL_KNOWN_URI : uri, types,
-                                           std::move(cb));
+                                           std::move(cb), connectivityType);
 
         m_discoveryInfo = std::move(discoveryInfo);
 
@@ -116,14 +121,14 @@
      * @param host
      */
     void DiscoveryManager::discoverResource(const std::string& uri, const std::string& type, FindCallback cb,
-                                std::string host)
+                                std::string host, OCConnectivityType connectivityType)
     {
         std::lock_guard<std::mutex> lock(m_discoveryMutex);
 
         m_isRunning = true;
 
         DiscoveryManagerInfo discoveryInfo(host, uri.empty() ? OC_RSRVD_WELL_KNOWN_URI : uri, std::vector<std::string> { type },
-                                           std::move(cb));
+                                           std::move(cb), connectivityType);
 
         m_discoveryInfo = std::move(discoveryInfo);
 
@@ -152,3 +157,4 @@
             m_timer.post(m_timerMs, std::bind(&DiscoveryManager::timeOutCB, this));
         }
     }
+} }

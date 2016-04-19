@@ -3,6 +3,9 @@
 #include <iostream>
 #include "Controller.h"
 
+using namespace OIC;
+using namespace OC;
+using namespace OIC::Service;
 
 ResourceObject::ResourceObject(RCSRemoteResourceObject::Ptr remoteResource)
 {

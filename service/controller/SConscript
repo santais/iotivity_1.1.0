@@ -99,7 +99,8 @@ if target_os == 'android':
 ######################################################################
 controller_src = [
 	'src/Controller.cpp',
-	'src/ResourceObject.cpp'
+	'src/ResourceObject.cpp',
+	'src/DiscoveryManager.cpp'
 	]
 
 Controller_Static = controller_env.StaticLibrary('controller', controller_src)

@@ -26,7 +26,7 @@ static const int DELAY_TIME_INPUT_THREAD = 10;      // ms
 // Blinking LED
 static const char LED_PIN = 13;
 static const char TEST_LED_PIN = 5; // PWM Pin
-static const char TEST_BUT_PIN = 2;
+static const char TEST_BUT_PIN = 2;	
 
 
 static int g_prevButtonReading = false;
@@ -260,7 +260,6 @@ void checkInputThread()
     }
 }
 
-
 //The setup function is called once at startup of the sketch
 void setup()
 {
@@ -361,6 +360,12 @@ void setup()
     buttonValue.next = NULL;
     buttonValue.type = OCREP_PROP_BOOL;
     addAttribute(&buttonResource->attribute, &buttonValue);
+
+    if(OCStartPresence(OC_MAX_PRESENCE_TTL_SECONDS - 1) != OC_STACK_OK)
+    {
+        OIC_LOG(ERROR, TAG, "Unable to start presence server");
+    }
+
 
     OIC_LOG(DEBUG, TAG, "Finished setup");
 }

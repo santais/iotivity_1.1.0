@@ -28,6 +28,42 @@ static int numOfObservers = 0;
 /**********************************************************************/
 /* PRIVATE FUCNTIONS
 /**********************************************************************/
+/**
+* @brief Called when a REST PUT is request
+*
+* @param OCBaseResource base resource attributes
+*
+* @return result of the entityHandler
+*/
+OCEntityHandlerResult getRequest(OCBaseResourceT *resource, OCRepPayload *payload);
+
+/**
+* @brief Called when a REST PUT is request
+*
+* @param OCBaseResource base resource attributes
+*
+* @return result of the entityHandler
+*/
+OCEntityHandlerResult putRequest(OCEntityHandlerRequest *ehRequest, OCRepPayload* payload, OCBaseResourceT *resource);
+
+
+/**
+ * @brief postRequest Called when a RESTful POST request is called
+ *
+ * @param ehRequest    Request parameters
+ * @param payload      Payload from the client
+ * @param resource     Resource the call was refered to
+ * @return
+ */
+OCEntityHandlerResult postRequest(OCEntityHandlerRequest *ehRequest, OCRepPayload* payload, OCBaseResourceT *resource);
+
+
+
+
+
+
+
+
 
 /**
   * @brief Entity handler handling all incoming requests
@@ -98,7 +134,7 @@ OCEntityHandlerResult observerHandler(OCEntityHandlerRequest *ehRequest, OCBaseR
  *
  * @return result of the entityHandler
  */
- OCEntityHandlerResult getRequest(OCBaseResourceT *resource, OCRepPayload *payload);
+ OCEntityHandlerResult quest(OCBaseResourceT *resource, OCRepPayload *payload);
 
  /**
  * @brief Called when a REST PUT is request
@@ -544,7 +580,6 @@ OCBaseResourceT * getResourceList()
 {
     return m_resourceList;
 }
-
 
 /**
  * @brief printResourceData Prints the data of a resource
