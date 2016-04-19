@@ -44,244 +44,256 @@
 #include "RCSDiscoveryManager.h"
 
 #include "ResourceObject.hpp"
+#include "discoverymanager.h"
 
 // Scene-manager
 #include "SceneList.h"
 
-namespace OIC { namespace Service
+using namespace OIC;
+using namespace OIC::Service;
+
+/*const std::string HOSTING_TAG = "/hosting";
+const auto HOSTING_TAG_SIZE = HOSTING_TAG.size();
+
+constexpr cbTimer BLE_DISCOVERY_TIMER = 5000; // Every 5 seconds.
+
+enum class SceneState
 {
+    START_SCENE,
+    STOP_SCENE
+};*/
 
-    using namespace OC;
-    using namespace OIC;
-    using namespace OIC::Service;
+class Controller
+{
+private:
+    typedef std::string ResourceKey;
 
-    const std::string HOSTING_TAG = "/hosting";
-    const auto HOSTING_TAG_SIZE = HOSTING_TAG.size();
+    typedef std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr>::const_iterator discoveryMapItr;
 
-    enum class SceneState
-    {
-        START_SCENE,
-        STOP_SCENE
-    };
+public:
+    typedef std::unique_ptr<Controller> Ptr;
+    typedef std::unique_ptr<const Controller> ConstPtr;
 
-    class Controller
-	{
-    private:
-		    typedef std::string ResourceKey;
+public:
+    /**
+     * @brief getInstance
+     * @return
+     */
+    static Controller* getInstance();
 
-        typedef std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr>::const_iterator discoveryMapItr;
+    /**
+      * Destructor.
+      *
+      *	Clear all memory and stop all processes.
+      */
+    ~Controller();
 
-    public:
-        typedef std::unique_ptr<Controller> Ptr;
-        typedef std::unique_ptr<const Controller> ConstPtr;
+    /**
+      * Start the Controller
+      */
+    OCStackResult start();
 
-	public:
-        /**
-         * @brief getInstance
-         * @return
-         */
-        static Controller* getInstance();
+    /**
+     '* Stops the Controller
+      */
+    OCStackResult stop();
 
-		/**
-          * Destructor.
-          *
-          *	Clear all memory and stop all processes.
-          */
-        ~Controller();
+    /**
+      * @brief Prints the data of an resource object
+      *
+      * @param resurce      Pointer holding the resource data
+      *
+      * @return OC_NO_RESOURCE if the resource doesn't exist.
+      */
+    OCStackResult printResourceData(RCSRemoteResourceObject::Ptr resource);
 
-        /**
-          * Start the Controller
-          */
-        OCStackResult start();
+    /**
+     * @brief getControllerResourceObjCallback  Called by the ResourceObject to invoke a change
+     *                                          in the specific resource
+     * @return
+     */
+    ResourceObject::ResourceObjectCacheCallback getControllerResourceCacheObjCallback();
+    ResourceObject::ResourceObjectStateCallback getControllerResourceStateObjCallback();
 
-        /**
-         '* Stops the Controller
-          */
-        OCStackResult stop();
+private:
+    /**
+      * Map containing all discovered resources.
+      */
+    std::unordered_map<ResourceKey, ResourceObject::Ptr> m_resourceList;
 
-        /**
-          * @brief Prints the data of an resource object
-          *
-          * @param resurce      Pointer holding the resource data
-          *
-          * @return OC_NO_RESOURCE if the resource doesn't exist.
-          */
-        OCStackResult printResourceData(RCSRemoteResourceObject::Ptr resource);
+    /**
+      * Mutex locking a discovered resource until it has been added to the map.
+      */
+    std::mutex m_resourceMutex;
 
-        /**
-         * @brief getControllerResourceObjCallback  Called by the ResourceObject to invoke a change
-         *                                          in the specific resource
-         * @return
-         */
-        ResourceObject::ResourceObjectCacheCallback getControllerResourceCacheObjCallback();
-        ResourceObject::ResourceObjectStateCallback getControllerResourceStateObjCallback();
+    /**
+      * DiscoveryTask used to cancel and observe the discovery process.
+      */
+    RCSDiscoveryManager::DiscoveryTask::Ptr m_discoveryTask;
+    RCSDiscoveryManager::ResourceDiscoveredCallback m_discoveryCallback;
+    std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr> m_discoveryTaskMap;
 
-    private:
-		/**
-		  * Map containing all discovered resources. 
-		  */
-        std::unordered_map<ResourceKey, ResourceObject::Ptr> m_resourceList;
+    /**
+      * DiscoveryManager for BLE devices
+      */
+    /*cbTimer m_discoveryTimerBLE;
+    DiscoveryManager m_discoveryManagerBLE;
+    FindCallback m_discoveryCallbackBLE;*/
 
-        /**
-          * Mutex locking a discovered resource until it has been added to the map.
-          */
-        std::mutex m_resourceMutex;
+    /**
+      * Boolean to indicate if the RD is started already
+      */
+    bool m_RDStarted;
 
-        /**
-          * DiscoveryTask used to cancel and observe the discovery process.
-          */
-        RCSDiscoveryManager::DiscoveryTask::Ptr m_discoveryTask;
-        RCSDiscoveryManager::ResourceDiscoveredCallback m_discoverCallback;
-        std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr> m_discoveryTaskMap;
+    /**
+     * @brief m_sceneCollection
+     * Collection of the scene. In this case the office
+     */
+    SceneCollection::Ptr m_sceneCollection;
 
-        /**
-          * Boolean to indicate if the RD is started already
-          */
-        bool m_RDStarted;
+    /**
+     * @brief m_sceneStart
+     * Scene environments with the specified actions for each individual resource
+     */
+    Scene::Ptr m_sceneStart;
+    Scene::Ptr m_sceneStop;
 
-        /**
-         * @brief m_sceneCollection
-         * Collection of the scene. In this case the office
-         */
-        SceneCollection::Ptr m_sceneCollection;
+    /**
+     * @brief m_sceneState Current active scene state.
+     */
+    SceneState m_sceneState;
 
-        /**
-         * @brief m_sceneStart
-         * Scene environments with the specified actions for each individual resource
-         */
-        Scene::Ptr m_sceneStart;
-        Scene::Ptr m_sceneStop;
-
-        /**
-         * @brief m_sceneState Current active scene state.
-         */
-        SceneState m_sceneState;
-
-        /**
-          * Callback inovked during a change in a registered resource;
-          */
-        ResourceObject::ResourceObjectCacheCallback m_resourceObjectCacheCallback;
-        ResourceObject::ResourceObjectStateCallback m_resourceObjectStateCallback;
+    /**
+      * Callback inovked during a change in a registered resource;
+      */
+    ResourceObject::ResourceObjectCacheCallback m_resourceObjectCacheCallback;
+    ResourceObject::ResourceObjectStateCallback m_resourceObjectStateCallback;
 
 
-	private:
-         /**
-           *	Default Constructor.
-           *
-           *	Initialize platform and device info.
-           *	Starts by discovering resource hosts and stores them in the resource list
-           *	Discovers other resources afterwards.
-           */
-         Controller();
+private:
+     /**
+       *	Default Constructor.
+       *
+       *	Initialize platform and device info.
+       *	Starts by discovering resource hosts and stores them in the resource list
+       *	Discovers other resources afterwards.
+       */
+     Controller();
 
-         /**
-          * @brief configurePlatform Configures the platform
-          */
-         void configurePlatform();
+     /**
+      * @brief configurePlatform Configures the platform
+      */
+     void configurePlatform();
 
-        /**
-          * @brief Function callback for found resources
-          *
-          * @param resource     The discovered resource.
-          */
-        void foundResourceCallback(std::shared_ptr<RCSRemoteResourceObject> resource);
+    /**
+      * @brief Function callback for found resources
+      *
+      * @param resource     The discovered resource.
+      */
+    void foundResourceCallback(std::shared_ptr<RCSRemoteResourceObject> resource);
 
-		/**
-          * Start the Resource Directory Server. Initiates resource discovery
-		  * and stores the discovered resources.
-		  *
-		  * @return Result of the startup
-		  */
-        OCStackResult startRD();
+    /**
+     * @brief foundResourceCallbackBLE Callback used for BLE devices
+     *
+     * @param The resource that has been found
+     */
+    void foundResourceCallbackBLE(OCResource::Ptr);
 
-		/**
-          * Stop the Resource Directory Server. Clears all memory used by
-		  * the resource host.
-		  *
-		  * @return Result of the shutdown
-		  */
-        OCStackResult stopRD();
+    /**
+      * Start the Resource Directory Server. Initiates resource discovery
+      * and stores the discovered resources.
+      *
+      * @return Result of the startup
+      */
+    OCStackResult startRD();
 
-        /**
-         * @brief printAttributes Prints the attributes of a resource
-         *
-         * @param attr          Attributes to be printed
-         */
-        void printAttributes(const RCSResourceAttributes& attr);
+    /**
+      * Stop the Resource Directory Server. Clears all memory used by
+      * the resource host.
+      *
+      * @return Result of the shutdown
+      */
+    OCStackResult stopRD();
 
-        /**
-          *  @brief Disovery of resources
-          *
-          *  @param address 	mutlicast or unicast address using RCSAddress class
-          *  @param cb 			Callback to which discovered resources are notified
-          *  @param uri 		Uri to discover. If null, do not include uri in discovery
-          *  @param type        Resource type used as discovery filter
-          *
-          *  @return Pointer to the discovery task.
-          */
-        RCSDiscoveryManager::DiscoveryTask::Ptr discoverResource(RCSDiscoveryManager::ResourceDiscoveredCallback cb,
-            RCSAddress address = RCSAddress::multicast(), const std::string& uri = std::string(""),
-            const std::string& type = std::string(""));
+    /**
+     * @brief printAttributes Prints the attributes of a resource
+     *
+     * @param attr          Attributes to be printed
+     */
+    void printAttributes(const RCSResourceAttributes& attr);
 
-        /**
-          *  @brief Disovery of resources
-          *
-          *  @param address 	mutlicast or unicast address using RCSAddress class
-          *  @param cb 			Callback to which discovered resources are notified
-          *  @param uri 		Uri to discover. If null, do not include uri in discovery
-          *  @param types       Resources types used as discovery filter
-          *
-          *  @return Pointer to the discovery task.
-          */
-        RCSDiscoveryManager::DiscoveryTask::Ptr discoverResource(RCSDiscoveryManager::ResourceDiscoveredCallback cb,
-            const std::vector<std::string> &types, RCSAddress address = RCSAddress::multicast(), const std::string& uri = std::string(""));
+    /**
+      *  @brief Disovery of resources
+      *
+      *  @param address 	mutlicast or unicast address using RCSAddress class
+      *  @param cb 			Callback to which discovered resources are notified
+      *  @param uri 		Uri to discover. If null, do not include uri in discovery
+      *  @param type        Resource type used as discovery filter
+      *
+      *  @return Pointer to the discovery task.
+      */
+    RCSDiscoveryManager::DiscoveryTask::Ptr discoverResource(RCSDiscoveryManager::ResourceDiscoveredCallback cb,
+        RCSAddress address = RCSAddress::multicast(), const std::string& uri = std::string(""),
+        const std::string& type = std::string(""));
 
-        /**
-          * @brief Looks up the list of known resources type
-          *
-          * @param resource     Pointer to the resource object
-          *
-          * @return True if the type is found, false otherwise.
-          */
-        bool isResourceLegit(RCSRemoteResourceObject::Ptr resource);
+    /**
+      *  @brief Disovery of resources
+      *
+      *  @param address 	mutlicast or unicast address using RCSAddress class
+      *  @param cb 			Callback to which discovered resources are notified
+      *  @param uri 		Uri to discover. If null, do not include uri in discovery
+      *  @param types       Resources types used as discovery filter
+      *
+      *  @return Pointer to the discovery task.
+      */
+    RCSDiscoveryManager::DiscoveryTask::Ptr discoverResource(RCSDiscoveryManager::ResourceDiscoveredCallback cb,
+        const std::vector<std::string> &types, RCSAddress address = RCSAddress::multicast(), const std::string& uri = std::string(""));
 
-
-        /**
-         * @brief addResourceToScene Adds a resource to the two scenes
-         *
-         * @param resource THe resource to be added
-         */
-        void addResourceToScene(RCSRemoteResourceObject::Ptr resource);
-
-
-        /**
-         * @brief executeSceneCallback Cb invoked when a scene is executed
-         *
-         * @param eCode Result of the scene execution.
-         */
-        void executeSceneCallback(int eCode);
+    /**
+      * @brief Looks up the list of known resources type
+      *
+      * @param resource     Pointer to the resource object
+      *
+      * @return True if the type is found, false otherwise.
+      */
+    bool isResourceLegit(RCSRemoteResourceObject::Ptr resource);
 
 
-        /**
-         * @brief resourceObjectCallback Callback invoked when a new request for a resource is invoked.
-         * @param resource      The resource that has been changed
-         * @param state         The type of change that occured
-         */
-        void resourceObjectCacheCallback(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &type);
+    /**
+     * @brief addResourceToScene Adds a resource to the two scenes
+     *
+     * @param resource THe resource to be added
+     */
+    void addResourceToScene(RCSRemoteResourceObject::Ptr resource);
 
 
-        /**
-         * @brief State called when the resource's state changes
-         *
-         * @param state New state of the resource
-         * @param resourceKey Key of the resource to find it in the map
-         */
-        void resourceObjectStateCallback(const ResourceState &state, const std::string &uri, const std::string &address);
+    /**
+     * @brief executeSceneCallback Cb invoked when a scene is executed
+     *
+     * @param eCode Result of the scene execution.
+     */
+    void executeSceneCallback(int eCode);
 
-	protected:
 
-	};
-} }
+    /**
+     * @brief resourceObjectCallback Callback invoked when a new request for a resource is invoked.
+     * @param resource      The resource that has been changed
+     * @param state         The type of change that occured
+     */
+    void resourceObjectCacheCallback(const RCSResourceAttributes &attrs, const ResourceObjectState &state, const ResourceDeviceType &type);
+
+
+    /**
+     * @brief State called when the resource's state changes
+     *
+     * @param state New state of the resource
+     * @param resourceKey Key of the resource to find it in the map
+     */
+    void resourceObjectStateCallback(const ResourceState &state, const std::string &uri, const std::string &address);
+
+protected:
+
+};
 
 #endif /* _CONTROLLER_H_ */
 
