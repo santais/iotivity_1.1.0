@@ -495,11 +495,11 @@ namespace OIC { namespace Service
                 m_resourceList.erase(resourceKey);
 
                 // Start a unicast discovery to the resource
-                RCSDiscoveryManager::DiscoveryTask::Ptr newDiscoveryTask = 
+              /*  RCSDiscoveryManager::DiscoveryTask::Ptr newDiscoveryTask =
                     Controller::discoverResource(m_discoveryCallback, RCSAddress::unicast(address));
                 
                 //std::pair<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr> discoveryEntry(resourceKey, newDiscoveryTask);
-                m_discoveryTaskMap.emplace(std::make_pair(resourceKey, std::move(newDiscoveryTask)));
+                m_discoveryTaskMap.emplace(std::make_pair(resourceKey, std::move(newDiscoveryTask)));*/
             }
             break;
 
