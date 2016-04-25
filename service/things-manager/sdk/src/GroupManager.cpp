@@ -196,6 +196,7 @@ OCStackResult GroupManager::findCandidateResources(
         std::vector< std::string > resourceTypes,
         CandidateCallback callback, int waitsec)
 {
+    std::cout << __func__ << std::endl;
     if (resourceTypes.size() < 1)
     {
         return OC_STACK_ERROR;

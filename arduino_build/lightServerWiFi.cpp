@@ -21,7 +21,6 @@
 #include "ocbaseresource.h"
 #include "resource_types.h"
 #include "easysetup.h"
-#include "rd_client.h"
 
 static const int DELAY_TIME_INPUT_THREAD = 1000;      // ms
 //static const int DELAY_RD_DISCOVERY = 3000;
@@ -72,110 +71,38 @@ void createLightResource();
 char g_ssid[] = "EasySetup123";
 char g_pass[] = "EasySetup123";
 
-void printAttribute(OCAttributeT *attributes)
+
+void lightIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResourceHandle handle, bool *underObservation)
 {
-    OIC_LOG(DEBUG, TAG, "Attributes :");
-    OCAttributeT *current = attributes;
-    while(current != NULL)
-    {
-        OIC_LOG_V(DEBUG, TAG, "Name: %s", current->name);
-        switch(current->value.dataType)
-        {
-        case INT:
-            OIC_LOG_V(DEBUG, TAG, "Value: %i", current->value.data.i);
-            //OIC_LOG_V(DEBUG, TAG, "Value: %i", *((int*)current->value.data));
-            break;
-        case DOUBLE:
-            OIC_LOG_V(DEBUG, TAG, "Value: %f", current->value.data.d);
-            //OIC_LOG_V(DEBUG, TAG, "Value: %f", *((double*)current->value.data));
-            break;
-            break;
-        case BOOL:
-            OIC_LOG_V(DEBUG, TAG, "Value: %s", current->value.data.b ? "true" : "false");
-           /* bool boolean = *((bool*) current->value.data);
-            OIC_LOG_V(DEBUG, TAG, "Value: %s", boolean ? "true" : "false");*/
-            break;
-        case STRING:
-            OIC_LOG_V(DEBUG, TAG, "Value: %s", current->value.data.str);
-            //OIC_LOG_V(DEBUG, TAG, "Value: %s", *((char**)current->value.data));
-            break;
-        }
-        current = current->next;
-    }
-    OIC_LOG(DEBUG, TAG, "Done printing attributes!");
-}
-
-void printResource(OCBaseResourceT *resource)
-{
-    OIC_LOG(DEBUG, TAG, "=============================");
-    OIC_LOG_V(DEBUG, TAG, "Resource URI: %s", resource->uri);
-    OIC_LOG_V(DEBUG, TAG, "Handle of the resource: %p", (void*) resource->handle);
-
-    OIC_LOG(DEBUG, TAG, "Resource Types: ");
-    OCResourceType *currentType = resource->type;
-    while(currentType != NULL)
-    {
-        OIC_LOG_V(DEBUG, TAG, "\t%s", currentType->resourcetypename);
-        currentType = currentType->next;
-    }
-
-    OIC_LOG(DEBUG, TAG, "Resource Interfaces: ");
-    OCResourceInterface *currentInterface = resource->interface;
-    while(currentInterface != NULL)
-    {
-        OIC_LOG_V(DEBUG, TAG, "\t%s", currentInterface->name);
-        currentInterface = currentInterface->next;
-    }
-
-    printAttribute(resource->attribute);
-    OIC_LOG(DEBUG, TAG, "=============================");
-}
-
-
-void lightIOHandler(OCAttributeT *attribute, int IOType, OCResourceHandle handle,
-                    bool *underObservation)
-{
-    if(IOType == OUTPUT)
+    if(port->type == OUTPUT)
     {
         bool power(false);
         int brightness(0);
        // OIC_LOG(DEBUG, TAG, "LightIOHandler: OUTPUT");
-        OCAttributeT *current = attribute;
+        OCRepPayloadValue *current = attribute;
         while(current != NULL)
         {
             //OIC_LOG_V(DEBUG, TAG, "Attribute name: %s", current->name);
             //OIC_LOG(DEBUG, TAG, "Searching light");
             if(strcmp(current->name, "power") == 0)
             {
-
-                power = current->value.data.b;
-                //OIC_LOG_V(DEBUG, TAG, "Power value received is: %s", power ? "true" : "false");
-
-                if(attribute)
-                {
-                    attribute->value.data.b = power;
-                }
+                power = current->b;
             }
             else if (strcmp(current->name, "brightness") == 0)
             {
-                brightness = current->value.data.i;
-                //OIC_LOG_V(DEBUG, TAG, "Brightness value set to: %i", brightness);
-
-                if(attribute)
-                {
-                    attribute->value.data.i = brightness;
-                }
+                brightness = current->i;
             }
 
             current = current->next;
         }
+
         if(power)
         {
-            analogWrite(attribute->port->pin, brightness);
+            analogWrite(port->pin, brightness);
         }
         else
         {
-            analogWrite(attribute->port->pin, 0);
+            analogWrite(port->pin, 0);
         }
 
         if(*underObservation)
@@ -267,25 +194,42 @@ void createLightResource()
     pinMode(LED_PIN, OUTPUT);
 
     OIC_LOG(DEBUG, TAG, "Creating resource");
-    // Light resource
-    g_lightResource = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
-                                              (OC_DISCOVERABLE | OC_OBSERVABLE), lightIOHandler);
-    resourceLight->name = "Mark's Light";
-
-    addType(resourceLight, OIC_TYPE_BINARY_SWITCH);
-    addType(resourceLight, OIC_TYPE_LIGHT_BRIGHTNESS);
 
     OCIOPort portLight;
     portLight.pin = TEST_LED_PIN; // LED_PIN for debug
     portLight.type = OUT;
 
-    ResourceData power;
-    power.b = true;
-    addAttribute(&resourceLight->attribute, "power", power, BOOL, &portLight);
+    // Light resource
+    OCBaseResourceT *resourceLight = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
+                                              (OC_DISCOVERABLE | OC_OBSERVABLE), lightIOHandler, &portLight);
 
-    ResourceData brightness;
-    brightness.i = 255;
-    addAttribute(&resourceLight->attribute, "brightness", brightness, INT, &portLight);
+    if(resourceLight != NULL)
+    {
+        OIC_LOG(INFO, TAG, "Light resource created successfully");
+        Serial.println((int)resourceLight->handle, HEX);
+    }
+    else
+    {
+        OIC_LOG(DEBUG, TAG, "Unable to create light resource");
+    }
+    resourceLight->name = "Mark's Light";
+
+    addType(resourceLight, OIC_TYPE_BINARY_SWITCH);
+    addType(resourceLight, OIC_TYPE_LIGHT_BRIGHTNESS);
+
+    OCRepPayloadValue powerValue;
+    powerValue.b = true;
+    powerValue.name = "power";
+    powerValue.next = NULL;
+    powerValue.type = OCREP_PROP_BOOL;
+    addAttribute(&resourceLight->attribute, &powerValue);
+
+    OCRepPayloadValue brightnessValue;
+    brightnessValue.i = 255;
+    brightnessValue.name = "brightness";
+    brightnessValue.next = NULL;
+    brightnessValue.type = OCREP_PROP_INT;
+    addAttribute(&resourceLight->attribute, &brightnessValue);
 
     //printResource(resourceLight);
 
@@ -336,18 +280,6 @@ void loop()
     delay(DELAY_TIME_INPUT_THREAD);
     //checkInputThread();
 
-    /*if(g_ProvisioningSucceeded)
-    {
-        // Connect to RD server
-        while(!g_rdInitialized)
-        {
-            OCRDDiscover(rdDiscoverCallback);
-            delay(DELAY_RD_DISCOVERY);
-        }
-
-        OCRDPublish(g_rdAddress, g_rdPort, 1, g_lightResource.handle);
-        g_ProvisioningSucceeded = false;
-    }*/
     // This call displays the amount of free SRAM available on Arduino
     //PrintArduinoMemoryStats();
 

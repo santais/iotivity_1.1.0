@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="iotivity-base-armeabi-v7a-release-unspecified">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/conserver/build/intermediates/exploded-aar/con-server/iotivity-base-armeabi-v7a-release/unspecified/res" />
+      <root url="jar://$PROJECT_DIR$/conserver/build/intermediates/exploded-aar/con-server/iotivity-base-armeabi-v7a-release/unspecified/jars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

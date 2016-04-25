@@ -131,8 +131,6 @@ namespace OIC { namespace Service
           */
         RCSDiscoveryManager::DiscoveryTask::Ptr m_discoveryTask;
         RCSDiscoveryManager::ResourceDiscoveredCallback m_discoveryCallback;
-        std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr> m_discoveryTaskMap;
-
 
         /**
           * DiscoveryManager to discover BLE devices

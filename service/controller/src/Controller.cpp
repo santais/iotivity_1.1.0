@@ -188,15 +188,6 @@ namespace OIC { namespace Service
                 std::cout << "\tDevice successfully added to the list" << std::endl;
             }
         }
-
-        // Check if the discoverymanager exist in the discovery map
-        discoveryMapItr mapItr = m_discoveryTaskMap.find(resource->getUri() + resource->getAddress());
-        if(mapItr != m_discoveryTaskMap.end())
-        {
-            std::cout << "\n\tFound discoverytask in map. Cancelling discovery and removing it" << std::endl;
-            mapItr->second->cancel();
-            m_discoveryTaskMap.erase(mapItr);
-        }
      }
 
      /**
@@ -484,26 +475,24 @@ namespace OIC { namespace Service
 
         switch(state)
         {
-            case ResourceState::ALIVE:
-
+        case ResourceState::ALIVE:
+                std::cout << "Resource with uri " << uri << " is ALIVE again" << std::endl;
             break;
-            case ResourceState::LOST_SIGNAL:
+        case ResourceState::LOST_SIGNAL:
+        case ResourceState::DESTROYED:
             {
                 std::cout << "Lost Signal " << std::endl;
+
                 // Find the resource and remove it from the list
                 ResourceKey resourceKey = uri + address;
-                m_resourceList.erase(resourceKey);
-
-                // Start a unicast discovery to the resource
-              /*  RCSDiscoveryManager::DiscoveryTask::Ptr newDiscoveryTask =
-                    Controller::discoverResource(m_discoveryCallback, RCSAddress::unicast(address));
-                
-                //std::pair<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr> discoveryEntry(resourceKey, newDiscoveryTask);
-                m_discoveryTaskMap.emplace(std::make_pair(resourceKey, std::move(newDiscoveryTask)));*/
+                if(m_resourceList.erase(resourceKey) > 0)
+                {
+                    std::cout << "Removed resource: " << uri << std::endl;
+                }
             }
             break;
 
-            default:
+        default:
                 std::cout << "Unsupported resource state" << std::endl; 
             break;
         }

@@ -74,7 +74,7 @@ OCEntityHandlerResult postRequest(OCEntityHandlerRequest *ehRequest, OCRepPayloa
   *
   * @return The result of the resource request handling.
   */
-OCEntityHandlerResult OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandlerRequest * entityHandlerRequest,
+OCEntityHandlerResult EntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandlerRequest * entityHandlerRequest,
                             void *callbackParam);
 /**
  * @brief printResourceData
@@ -194,7 +194,7 @@ OCEntityHandlerResult observerHandler(OCEntityHandlerRequest *ehRequest, OCBaseR
   */
  const char * getEntityHandlerRequestResult(OCEntityHandlerRequest *entityHandler);
 
-OCEntityHandlerResult OCEntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandlerRequest * entityHandlerRequest,
+OCEntityHandlerResult EntityHandlerCb(OCEntityHandlerFlag flag, OCEntityHandlerRequest * entityHandlerRequest,
                             void *callbackParam)
 {
     OCEntityHandlerResult ehResult = OC_EH_OK;
@@ -304,7 +304,7 @@ OCBaseResourceT * createResource(char* uri, OCResourceType* type, OCResourceInte
             resource->type->resourcetypename,
             resource->interface->name,
             resource->uri,
-            OCEntityHandlerCb,
+            EntityHandlerCb,
             resource,
             resource->resourceProperties);
     OIC_LOG_V(DEBUG, TAG, "Created resource with OCStackResult: %s", res);

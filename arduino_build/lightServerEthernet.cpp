@@ -332,7 +332,7 @@ void setup()
     buttonPort.pin = TEST_BUT_PIN;
     buttonPort.type = IN;
 
-    OCBaseResourceT *buttonResource = createResource("/a/button", OIC_DEVICE_BUTTON, OC_RSRVD_INTERFACE_DEFAULT, 
+    OCBaseResourceT *buttonResource = createResource("/a/button", OIC_DEVICE_BUTTON, OC_RSRVD_INTERFACE_DEFAULT,
                                             (OC_DISCOVERABLE | OC_OBSERVABLE), NULL, &buttonPort);
 
     if(buttonResource != NULL)
@@ -361,7 +361,7 @@ void setup()
     buttonValue.type = OCREP_PROP_BOOL;
     addAttribute(&buttonResource->attribute, &buttonValue);
 
-    if(OCStartPresence(OC_MAX_PRESENCE_TTL_SECONDS - 1) != OC_STACK_OK)
+    if(OCStartPresence(60 * 60) != OC_STACK_OK)
     {
         OIC_LOG(ERROR, TAG, "Unable to start presence server");
     }

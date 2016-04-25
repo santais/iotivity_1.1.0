@@ -1,0 +1,2 @@
+include ':java', ':iotivity-base-armeabi-v7a-release'
+include ':conserver'

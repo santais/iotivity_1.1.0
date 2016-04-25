@@ -1,0 +1,80 @@
+ECLIPSE ANDROID PROJECT IMPORT SUMMARY
+======================================
+
+Ignored Files:
+--------------
+The following files were *not* copied into the new Gradle project; you
+should evaluate whether these are still needed in your project and if
+so manually move them:
+
+From con-server:
+* ic_launcher-web.png
+From java:
+* AndroidManifest.xml
+* jni/
+* jni/Android.mk
+* jni/Application.mk
+* jni/SConscript
+* jni/jniutil/
+* jni/jniutil/inc/
+* jni/jniutil/inc/jni_getter.h
+* jni/jniutil/inc/jni_object.h
+* jni/jniutil/inc/jni_setter.h
+* jni/jniutil/inc/jni_string.h
+* jni/jniutil/inc/jni_things_manager_jvm.h
+* jni/jniutil/src/
+* jni/jniutil/src/jni_getter.cpp
+* jni/jniutil/src/jni_object.cpp
+* jni/jniutil/src/jni_setter.cpp
+* jni/jniutil/src/jni_string.cpp
+* jni/jniutil/src/jni_things_manager_jvm.cpp
+* jni/tm/
+* jni/tm/inc/
+* jni/tm/inc/jni_action.h
+* jni/tm/inc/jni_action_set.h
+* jni/tm/inc/jni_capability.h
+* jni/tm/inc/jni_group_manager.h
+* jni/tm/inc/jni_group_manager_callbacks.h
+* jni/tm/inc/jni_things_configuration.h
+* jni/tm/inc/jni_things_configuration_callbacks.h
+* jni/tm/inc/jni_things_maintenance.h
+* jni/tm/inc/jni_things_maintenance_callbacks.h
+* jni/tm/inc/jni_things_manager_util.h
+* jni/tm/src/
+* jni/tm/src/jni_action.cpp
+* jni/tm/src/jni_action_set.cpp
+* jni/tm/src/jni_capability.cpp
+* jni/tm/src/jni_group_manager.cpp
+* jni/tm/src/jni_group_manager_callbacks.cpp
+* jni/tm/src/jni_things_configuration.cpp
+* jni/tm/src/jni_things_configuration_callbacks.cpp
+* jni/tm/src/jni_things_maintenance.cpp
+* jni/tm/src/jni_things_maintenance_callbacks.cpp
+* jni/tm/src/jni_things_manager_util.cpp
+
+Moved Files:
+------------
+Android Gradle projects use a different directory structure than ADT
+Eclipse projects. Here's how the projects were restructured:
+
+In java:
+* src/ => java/src/main/java/
+In con-server:
+* AndroidManifest.xml => conserver/src/main/AndroidManifest.xml
+* res/ => conserver/src/main/res/
+* src/ => conserver/src/main/java/
+
+Next Steps:
+-----------
+You can now build the project. The Gradle project needs network
+connectivity to download dependencies.
+
+Bugs:
+-----
+If for some reason your project does not build, and you determine that
+it is due to a bug or limitation of the Eclipse to Gradle importer,
+please file a bug at http://b.android.com with category
+Component-Tools.
+
+(This import summary is for your information only, and can be deleted
+after import once you are satisfied with the results.)

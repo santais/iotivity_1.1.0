@@ -34,7 +34,14 @@
 #include "OCApi.h"
 #include "resource_types.h"
 
+#include "ThingsConfiguration.h"
+#include "ThingsMaintenance.h"
+#include "ConfigurationCollection.h"
+#include "MaintenanceCollection.h"
+//#include "FactorySetCollection.h"
+
 using namespace OC;
+using namespace OIC;
 using namespace std;
 namespace PH = std::placeholders;
 
@@ -50,6 +57,14 @@ bool isSecure = false;
 
 /// Specifies whether Entity handler is going to do slow response or not
 bool isSlowResponse = false;
+
+// Configuration resource
+static ConfigurationResource* g_configurationResource;
+static ThingsConfiguration* g_thingsConf;
+std::condition_variable g_bootstrapCondition;
+std::mutex g_mutex;
+bool g_bootstrapSet = false;
+typedef std::function< OCRepresentation(void) > getFunc;
 
 // Forward declaring the entityHandler
 
@@ -346,11 +361,170 @@ void * handleSlowResponse(void *param, std::shared_ptr< OCResourceRequest > pReq
     return NULL;
 }
 
+// callback handler on GET request
+void onBootstrap(const HeaderOptions& /*headerOptions*/, const OCRepresentation& rep, const int eCode)
+{
+    std::cout << __func__ << std::endl;
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_bootstrapSet = true;
+
+    if (eCode == OC_STACK_ERROR)
+    {
+        std::cout << "onGET Response error: " << eCode << std::endl;
+        g_bootstrapCondition.notify_all();
+        return ;
+    }
+
+    std::cout << "\n\nGET request was successful" << std::endl;
+    std::cout << "\tResource URI: " << rep.getUri() << std::endl;
+/*
+    std::string defaultDeviceName = rep.getValue< std::string >("n");
+    std::string defaultLocation = rep.getValue< std::string >("loc");
+    std::string defaultLocationName = rep.getValue< std::string >("locn");
+    std::string defaultRegion = rep.getValue< std::string >("r");
+    std::string defaultCurrency = rep.getValue< std::string >("c");
+
+    std::cout << "\tDeviceName : " << defaultDeviceName << std::endl;
+    std::cout << "\tLocation : " << defaultLocation << std::endl;
+    std::cout << "\tLocationName : " << defaultLocationName << std::endl;
+    std::cout << "\tCurrency : " << defaultCurrency << std::endl;
+    std::cout << "\tRegion : " << defaultRegion << std::endl;
+*/
+    // Set the configuration resource
+    OCRepresentation newRep = rep;
+    g_configurationResource->setConfigurationRepresentation(newRep);
+
+    g_bootstrapCondition.notify_all();
+
+}
+
+getFunc getGetFunction(std::string uri)
+{
+    getFunc res = NULL;
+
+    if (uri == g_configurationResource->getUri())
+    {
+        res = std::bind(&ConfigurationResource::getConfigurationRepresentation,
+                g_configurationResource);
+    }
+    /*
+    else if (uri == myMaintenanceResource->getUri())
+    {
+        res = std::bind(&MaintenanceResource::getMaintenanceRepresentation,
+                myMaintenanceResource);
+    }*/
+
+    return res;
+}
+
+OCStackResult sendResponseForResource(std::shared_ptr< OCResourceRequest > pRequest)
+{
+    auto pResponse = std::make_shared< OC::OCResourceResponse >();
+
+    // Check for query params (if any)
+    QueryParamsMap queryParamsMap = pRequest->getQueryParameters();
+
+    pResponse->setRequestHandle(pRequest->getRequestHandle());
+    pResponse->setResourceHandle(pRequest->getResourceHandle());
+
+    getFunc getFunction;
+    getFunction = getGetFunction(pRequest->getResourceUri());
+
+    OCRepresentation rep;
+    rep = getFunction();
+
+    auto findRes = queryParamsMap.find("if");
+
+    if (findRes != queryParamsMap.end())
+    {
+        pResponse->setResourceRepresentation(rep, findRes->second);
+    }
+    else
+    {
+        pResponse->setResourceRepresentation(rep, DEFAULT_INTERFACE);
+    }
+
+    pResponse->setErrorCode(200);
+    pResponse->setResponseResult(OC_EH_OK);
+
+    return OCPlatform::sendResponse(pResponse);
+}
+
+// This function prepares a response for any incoming request to Light resource.
+bool prepareResponseForResource(std::shared_ptr< OCResourceRequest > request)
+{
+    std::cout << "\tIn Server CPP prepareResponseForResource:\n";
+    bool result = false;
+    if (request)
+    {
+        // Get the request type and request flag
+        std::string requestType = request->getRequestType();
+        int requestFlag = request->getRequestHandlerFlag();
+
+        if (requestFlag == RequestHandlerFlag::RequestFlag)
+        {
+            std::cout << "\t\trequestFlag : Request\n";
+
+            // If the request type is GET
+            if (requestType == "GET")
+            {
+                std::cout << "\t\t\trequestType : GET\n";
+                // GET operations are directly handled while sending the response
+                // in the sendLightResponse function
+                result = true;
+            }
+            else if (requestType == "POST")
+            {
+                // POST request operations
+            }
+            else if (requestType == "DELETE")
+            {
+                // DELETE request operations
+            }
+        }
+        else if (requestFlag == RequestHandlerFlag::ObserverFlag)
+        {
+            std::cout << "\t\trequestFlag : Observer\n";
+        }
+    }
+    else
+    {
+        std::cout << "Request invalid" << std::endl;
+    }
+
+    return result;
+}
+
+OCEntityHandlerResult entityHandlerConfiguration(std::shared_ptr< OCResourceRequest > request)
+{
+    std::cout << "\tIn Server CPP (entityHandlerForResource) entity handler:\n";
+    OCEntityHandlerResult ehResult = OC_EH_ERROR;
+
+    QueryParamsMap test = request->getQueryParameters();
+
+    if (prepareResponseForResource(request))
+    {
+        if (OC_STACK_OK == sendResponseForResource(request))
+        {
+            ehResult = OC_EH_OK;
+        }
+        else
+        {
+            std::cout << "sendResponse failed." << std::endl;
+        }
+    }
+    else
+    {
+        std::cout << "PrepareResponse failed." << std::endl;
+    }
+    return ehResult;
+}
+
 int main()
 {
     // Create PlatformConfig object
     PlatformConfig cfg
-    { OC::ServiceType::InProc, OC::ModeType::Server, "0.0.0.0",
+    { OC::ServiceType::InProc, OC::ModeType::Both, "0.0.0.0",
     // By setting to "0.0.0.0", it binds to all available interfaces
             0,// Uses randomly available port
             OC::QualityOfService::LowQos };
@@ -364,6 +538,22 @@ int main()
 
         // Invoke createResource function of class light.
         myLight.createResource();
+
+        // Create the configuration resource
+        g_configurationResource = new ConfigurationResource();
+        g_configurationResource->createResources(&entityHandlerConfiguration);
+        g_thingsConf = new ThingsConfiguration();
+
+        // Set the bootstrap server
+        if( g_thingsConf->doBootstrap(&onBootstrap) == OC_STACK_OK)
+        {
+            // Hold the condition
+            std::cout << "Waiting for boostrap server" << std::endl;
+            std::unique_lock<std::mutex> lock(g_mutex);
+            g_bootstrapCondition.wait_for(lock, std::chrono::milliseconds(30000), [](){return g_bootstrapSet;});
+        }
+
+        std::cout << "Boostrap server has been found" << std::endl;
 
         while(OCProcess() == OC_STACK_OK)
         {

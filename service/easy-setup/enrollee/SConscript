@@ -146,8 +146,8 @@ if target_os == 'arduino':
 	enrollee_env.InstallTarget(es_sdk_static, 'libESEnrolleeSDK')
 
 #Go to build sample apps
-if target_os == 'arduino':
-	SConscript('../sampleapp/enrollee/arduino/SConscript')
+#if target_os == 'arduino':
+#	SConscript('../sampleapp/enrollee/arduino/SConscript')
 
 if target_os == 'linux':
 	SConscript('../sampleapp/enrollee/linux/SConscript')

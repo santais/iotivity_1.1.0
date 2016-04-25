@@ -32,7 +32,11 @@ arduino_simplecs_env.PrependUnique(CPPPATH = [
 		'../resource/csdk/stack/include',
 		'../resource/csdk/stack/include/internal',
 		'../resource/csdk/connectivity/api',
-		'../resource/oc_logger/include'
+		'../resource/oc_logger/include',
+		'../service/easy-setup/inc',
+		'../service/easy-setup/enrollee/arduino/wifi',
+		'../service/easy-setup/enrollee/inc',
+		'../service/easy-setup/enrollee/src'
 		])
 
 print(env.get('ES_ROLE'))
@@ -40,10 +44,10 @@ print(env.get('ES_ROLE'))
 arduino_simplecs_env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
 arduino_simplecs_env.AppendUnique(CPPDEFINES = ['TB_LOG'])
 
-arduino_simplecs_env.PrependUnique(LIBS = ['octbstack', 'ocsrm', 'connectivity_abstraction', 'coap'])
+arduino_simplecs_env.PrependUnique(LIBS = ['octbstack', 'ocsrm', 'connectivity_abstraction', 'coap', 'ESEnrolleeSDK'])
 
 if ('arduino_due_x' or 'arduino_due_x_dbg') in env.get('BOARD'):
-	arduino_simplecs = arduino_simplecs_env.Program('arduinoLightServer', 'lightServerEthernet.cpp',)
+	arduino_simplecs = arduino_simplecs_env.Program('arduinoLightServer', 'lightServerWiFi.cpp',)
 if 'mega' in env.get('BOARD'):
 	print('MEGA temperature sensor')
 	arduino_simplecs = arduino_simplecs_env.Program('arduinoTemperatureServer', 'temperatureServer.cpp')

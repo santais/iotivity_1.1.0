@@ -149,7 +149,9 @@ void ResourceObject::cacheUpdateCallback(const RCSResourceAttributes attrs)
         std::cout << "\n=================================" << std::endl;
         std::cout << "Cached changed for device: " << ResourceObject::convertResourceDeviceTypeToString(m_resourceDeviceType) << std::endl;
         this->printAttributes(attrs);
-        m_resourceObjectCacheCallback(std::move(attrs), ResourceObjectState::CACHE_CHANGED, m_resourceDeviceType);
+        if(m_resourceObjectCacheCallback) {
+            m_resourceObjectCacheCallback(std::move(attrs), ResourceObjectState::CACHE_CHANGED, m_resourceDeviceType);
+        }
     }
     else
     {
@@ -173,13 +175,8 @@ void ResourceObject::stateChangedCallback(const ResourceState state)
     	std::cout << "\n=================================" << std::endl;
     	std::cout << "State changed for device: " << ResourceObject::convertResourceDeviceTypeToString(m_resourceDeviceType) << std::endl;
     	this->printResourceState(state);
-    	try 
-    	{
+        if(m_resourceObjectStateCallback) {
 	    	m_resourceObjectStateCallback(state, m_resourceObject->getUri(), m_resourceObject->getAddress());
-    	}
-    	catch (RCSException e)
-    	{
-    		std::cerr << "Error at getting uri + address: " << e.what() << std::endl;
     	}
     }
     else

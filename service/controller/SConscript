@@ -49,7 +49,11 @@ controller_env.AppendUnique(CPPPATH = ['../resource-encapsulation/src/common/exp
 controller_env.AppendUnique(CPPPATH = ['../resource-hosting/src'])
 controller_env.AppendUnique(CPPPATH = ['../scene-manager/include', '../scene_manager/src'])
 controller_env.AppendUnique(CPPPATH = ['../../resource/include'])
-controller_env.AppendUnique(CPPPATH = ['../../resource/csdk/stack/include'])
+controller_env.AppendUnique(CPPPATH = ['../../resource/csdk/stack/include']),
+controller_env.AppendUnique(CPPPATH = ['../things-manager/sdk/inc']),
+controller_env.AppendUnique(CPPPATH = ['../things-manager/sdk/src'])
+controller_env.AppendUnique(CPPPATH = ['../things-manager/sdk/inc']),
+controller_env.AppendUnique(CPPPATH = ['../things-manager/sampleapp/linux/configuration/'])
 
 # RD
 controller_env.AppendUnique(CPPPATH = ['../resource-directory/include'])
@@ -68,7 +72,9 @@ controller_env.AppendUnique(LIBS = [
     'octbstack',
     'oc_logger',
     'connectivity_abstraction',
-    'libcoap'
+    'libcoap',
+    'libTGMSDKLibrary',
+    'dl'
     ])
 
 controller_env.PrependUnique(LIBS = 'resource_directory')
@@ -100,7 +106,8 @@ if target_os == 'android':
 controller_src = [
 	'src/Controller.cpp',
 	'src/ResourceObject.cpp',
-	'src/DiscoveryManager.cpp'
+	'src/DiscoveryManager.cpp',
+	'src/ConfigurationCollection.cpp'
 	]
 
 Controller_Static = controller_env.StaticLibrary('controller', controller_src)
