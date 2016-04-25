@@ -330,7 +330,7 @@ extern "C" {
 #define OC_RSRVD_MEDIA_TYPE              "mt"
 
 /** To represent resource type with Publish RD.*/
-#define OC_RSRVD_RESOURCE_TYPE_RDPUBLISH "oic.wk.rdPub"
+#define OC_RSRVD_RESOURCE_TYPE_RDPUBLISH "oic.wk.rdpub"
 
 /**
  * Mark a parameter as unused. Used to prevent unused variable compiler warnings.
@@ -1211,10 +1211,11 @@ typedef struct
 {
     OCPayload base;
     char *sid;
-    OCStringLL *types;
     char* deviceName;
     char* specVersion;
     char* dataModelVersion;
+    OCStringLL *interfaces;
+    OCStringLL *types;
 } OCDevicePayload;
 
 typedef struct
