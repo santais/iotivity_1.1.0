@@ -70,11 +70,11 @@ things_manager_env.UserInstallTargetHeader('sdk/inc/ThingsMaintenance.h', 'servi
 #    SConscript(os.path.join('sdk', 'java', 'jni', 'SConscript'))
 
 #Go to build sample apps
-SConscript('sampleapp/SConscript')
+#SConscript('sampleapp/SConscript')
 
 ######################################################################
 # Build UnitTests Things Manager
 ################################################ ######################
-if target_os == 'linux':
-    SConscript('unittests/SConscript')
+#if target_os == 'linux':
+#    SConscript('unittests/SConscript')
 

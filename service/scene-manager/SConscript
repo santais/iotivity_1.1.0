@@ -105,4 +105,4 @@ scenemanager_env.UserInstallTargetHeader('include/RemoteSceneAction.h', 'service
 #    SConscript('unittests/SConscript')
 
 # Go to build sample apps
-SConscript('sampleapp/SConscript')
+#SConscript('sampleapp/SConscript')

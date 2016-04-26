@@ -88,5 +88,5 @@ simulatorsdk = simulator_env.SharedLibrary('SimulatorManager', simulator_src)
 simulator_env.InstallTarget(simulatorsdk, 'libSimulatorManager')
 
 #Build sample application
-SConscript('examples/server/SConscript')
-SConscript('examples/client/SConscript')
+#SConscript('examples/server/SConscript')
+#SConscript('examples/client/SConscript')
