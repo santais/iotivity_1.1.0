@@ -59,6 +59,8 @@ void CAEDRNetworkMonitorJniInit()
 
 CAResult_t CAEDRInitializeNetworkMonitor(const ca_thread_pool_t threadPool)
 {
+    OIC_LOG(DEBUG, TAG, "IN");
+
     if (!threadPool)
     {
         return CA_STATUS_FAILED;
@@ -69,6 +71,7 @@ CAResult_t CAEDRInitializeNetworkMonitor(const ca_thread_pool_t threadPool)
         CANativeJNIGetJavaVM();
     }
 
+    OIC_LOG(DEBUG, TAG, "OUT");
     return CA_STATUS_OK;
 }
 
@@ -80,20 +83,32 @@ void CAEDRSetNetworkChangeCallback(CAEDRNetworkStatusCallback networkChangeCallb
 
 void CAEDRTerminateNetworkMonitor(void)
 {
+    OIC_LOG(DEBUG, TAG, "IN");
+
+    OIC_LOG(DEBUG, TAG, "OUT");
 }
 
 CAResult_t CAEDRStartNetworkMonitor()
 {
+    OIC_LOG(DEBUG, TAG, "IN");
+
+    OIC_LOG(DEBUG, TAG, "OUT");
     return CA_STATUS_OK;
 }
 
 CAResult_t CAEDRStopNetworkMonitor()
 {
+    OIC_LOG(DEBUG, TAG, "IN");
+
+    OIC_LOG(DEBUG, TAG, "OUT");
     return CA_STATUS_OK;
 }
 
 CAResult_t CAEDRClientSetCallbacks(void)
 {
+    OIC_LOG(DEBUG, TAG, "IN");
+
+    OIC_LOG(DEBUG, TAG, "OUT");
     return CA_STATUS_OK;
 }
 
@@ -119,21 +134,21 @@ Java_org_iotivity_ca_CaEdrInterface_caEdrStateChangedCallback(JNIEnv *env, jobje
     jclass jni_cid_BTAdapter = (*env)->FindClass(env, CLASSPATH_BT_ADPATER);
     if (!jni_cid_BTAdapter)
     {
-        OIC_LOG(ERROR, TAG, "jni_cid_BTAdapter is null");
+        OIC_LOG(ERROR, TAG, "[EDR][Native] jni_cid_BTAdapter is null");
         return;
     }
 
     jfieldID id_state_on = (*env)->GetStaticFieldID(env, jni_cid_BTAdapter, "STATE_ON", "I");
     if (!id_state_on)
     {
-        OIC_LOG(ERROR, TAG, "id_state_on is null");
+        OIC_LOG(ERROR, TAG, "[EDR][Native] id_state_on is null");
         return;
     }
 
     jfieldID id_state_off = (*env)->GetStaticFieldID(env, jni_cid_BTAdapter, "STATE_OFF", "I");
     if (!id_state_off)
     {
-        OIC_LOG(ERROR, TAG, "id_state_off is null");
+        OIC_LOG(ERROR, TAG, "[EDR][Native] id_state_off is null");
         return;
     }
 
@@ -144,10 +159,10 @@ Java_org_iotivity_ca_CaEdrInterface_caEdrStateChangedCallback(JNIEnv *env, jobje
     {
         CANetworkStatus_t newStatus = CA_INTERFACE_UP;
 
-        CAResult_t res = CAEDRStartReceiveThread(false);
+        CAResult_t res = CAEDRStartUnicastServer(false);
         if (CA_STATUS_OK != res)
         {
-            OIC_LOG(ERROR, TAG, "Failed to CAEDRStartReceiveThread");
+            OIC_LOG(ERROR, TAG, "CAEDRStartUnicastServer failed");
             return;
         }
         CAEDRServerStartAcceptThread();
@@ -180,34 +195,5 @@ Java_org_iotivity_ca_CaEdrInterface_caEdrBondStateChangedCallback(JNIEnv *env, j
     {
         CAEDRNativeRemoveDeviceSocketBaseAddr(env, addr);
         CAEDRNativeRemoveDevice(addr);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_org_iotivity_ca_CaEdrInterface_caEdrConnectionStateChangedCallback(JNIEnv *env,
-                                                                        jobject obj,
-                                                                        jstring addr,
-                                                                        jint isConnected)
-{
-    if (!env || !obj || !addr)
-    {
-        OIC_LOG(ERROR, TAG, "parameter is null");
-        return;
-    }
-
-    OIC_LOG_V(DEBUG, TAG, "CaEdrInterface - Connection State Changed : %d", isConnected);
-
-    if (!isConnected)
-    {
-        const char *address = (*env)->GetStringUTFChars(env, addr, NULL);
-        if (!address)
-        {
-            OIC_LOG(ERROR, TAG, "address is null");
-            return;
-        }
-
-        CAEDRNativeRemoveDeviceSocketBaseAddr(env, addr);
-        CAEDRNativeRemoveDevice(address);
-        (*env)->ReleaseStringUTFChars(env, addr, address);
     }
 }

@@ -41,6 +41,7 @@ static const jint LINK_LOSS = 8;
 static const jint ACCEPT_TIMEOUT_EXCEPTION = 16;
 static const jint REMOTE_DISCONNECT = 19;
 static const jint LOCAL_DISCONNECT = 22;
+static const jint CONNECTION_FAILED_TO_BE_EASTABLISHED = 62;
 static const jint USER_REMOVED_BOND = 68;
 static JavaVM *g_jvm = NULL;
 static jobject g_context = NULL;
@@ -417,10 +418,10 @@ Java_org_iotivity_ca_CaLeClientInterface_caManagerLeGattConnectionStateChangeCB(
     jint state_disconnected = CALEGetConstantsValue(env, CLASSPATH_BT_PROFILE, "STATE_DISCONNECTED");
     jint gatt_success = CALEGetConstantsValue(env, CLASSPATH_BT_GATT, "GATT_SUCCESS");
 
-    jstring jni_address = CALEGetAddressFromGatt(env, gatt);
+    jstring jni_address = CAManagerGetAddressFromGatt(env, gatt);
     if (!jni_address)
     {
-        OIC_LOG(ERROR, TAG, "CALEGetAddressFromGatt is null");
+        OIC_LOG(ERROR, TAG, "CAManagerGetAddressFromGatt is null");
         return;
     }
 
@@ -447,17 +448,17 @@ Java_org_iotivity_ca_CaLeClientInterface_caManagerLeGattConnectionStateChangeCB(
     }
     else if (state_disconnected == newState)// le disconnected
     {
-        OIC_LOG(DEBUG, TAG, "LE is disconnected");
-
-        if (g_connStateCB)
-        {
-            OIC_LOG_V(DEBUG, TAG, "LE Disconnected state is %d, %s", newState, address);
-            g_connStateCB(CA_ADAPTER_GATT_BTLE, address, false);
-            OIC_LOG(DEBUG, TAG, "LE Disconnected state callback is called");
-        }
-
         if (LINK_LOSS == status || REMOTE_DISCONNECT == status)
         {
+            OIC_LOG(DEBUG, TAG, "LE is disconnected");
+
+            if (g_connStateCB)
+            {
+                OIC_LOG_V(DEBUG, TAG, "LE Disconnected state is %d, %s", newState, address);
+                g_connStateCB(CA_ADAPTER_GATT_BTLE, address, false);
+                OIC_LOG(DEBUG, TAG, "LE Disconnected state callback is called");
+            }
+
             if (!CAManagerIsMatchedACData(env, jni_address))
             {
                 OIC_LOG_V(DEBUG, TAG, "this[%s] is not target address for Auto Connection",
@@ -509,10 +510,10 @@ Java_org_iotivity_ca_CaLeClientInterface_caManagerLeServicesDiscoveredCallback(J
             return;
         }
 
-        jstring jni_address = CALEGetAddressFromGatt(env, gatt);
+        jstring jni_address = CAManagerGetAddressFromGatt(env, gatt);
         if (!jni_address)
         {
-            OIC_LOG(ERROR, TAG, "CALEGetAddressFromGatt is null");
+            OIC_LOG(ERROR, TAG, "CAManagerGetAddressFromGatt is null");
             return;
         }
 
@@ -634,7 +635,7 @@ Java_org_iotivity_ca_CaLeClientInterface_caManagerLeServicesDiscoveredCallback(J
 
                 // next connection will be requested as JNI_TRUE flag
                 // after first connection
-                CALEClientSetFlagToState(env, jni_str_entry, CA_LE_AUTO_CONNECT_FLAG, JNI_TRUE);
+                CALEClientSetAutoConnectFlag(env, jni_str_entry, JNI_TRUE);
             }
             else
             {

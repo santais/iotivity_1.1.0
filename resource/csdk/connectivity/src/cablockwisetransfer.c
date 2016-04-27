@@ -40,7 +40,6 @@
 #include "caremotehandler.h"
 #include "cablockwisetransfer.h"
 #include "oic_malloc.h"
-#include "oic_string.h"
 #include "camutex.h"
 #include "logger.h"
 
@@ -113,7 +112,6 @@ CAResult_t CATerminateBlockWiseTransfer()
 
     if (g_context.dataList)
     {
-        CARemoveAllBlockDataFromList();
         u_arraylist_free(&g_context.dataList);
     }
 
@@ -1233,7 +1231,7 @@ CAResult_t CASetMoreBitFromBlock(size_t payloadLen, coap_block_t *block)
 }
 
 CAResult_t CANegotiateBlockSize(CABlockData_t *currData, coap_block_t *block,
-                                const coap_pdu_t *pdu, uint16_t blockType)
+                                coap_pdu_t *pdu, uint16_t blockType)
 {
     OIC_LOG(DEBUG, TAG, "IN-NegotiateBlockSize");
 
@@ -1441,6 +1439,8 @@ CAResult_t CAAddBlockOption(coap_pdu_t **pdu, const CAInfo_t *info,
         if (!coap_add_data(*pdu, dataLength, (const unsigned char *) info->payload))
         {
             OIC_LOG(INFO, TAG, "it have to use block");
+            res = CA_STATUS_FAILED;
+            goto exit;
         }
         else
         {
@@ -2030,20 +2030,11 @@ CAData_t* CACreateNewDataSet(const coap_pdu_t *pdu, const CAEndpoint_t *endpoint
 
         // get resource uri information from received response message
         // to send next request message to remote device
-        CAResponseInfo_t* resInfo = (CAResponseInfo_t*)OICCalloc(1, sizeof(*resInfo));
-        if (!resInfo)
-        {
-            OIC_LOG(ERROR, TAG, "memory allocation failed");
-            OICFree(requestData.token);
-            return NULL;
-        }
+        CAResponseInfo_t resInfo = { 0 };
+        CAGetResponseInfoFromPDU(pdu, &resInfo, endpoint);
 
-        CAGetResponseInfoFromPDU(pdu, resInfo, endpoint);
         requestInfo->method = CA_GET;
-        requestInfo->info.resourceUri = OICStrdup(resInfo->info.resourceUri);
-
-        // after copying the resource uri, destroy response info.
-        CADestroyResponseInfoInternal(resInfo);
+        requestInfo->info.resourceUri = resInfo.info.resourceUri;
     }
 
     CAData_t *data = (CAData_t *) OICCalloc(1, sizeof(CAData_t));
@@ -2604,33 +2595,6 @@ CAResult_t CARemoveBlockDataFromList(const CABlockDataID_t *blockID)
             OICFree(currData);
             ca_mutex_unlock(g_context.blockDataListMutex);
             return CA_STATUS_OK;
-        }
-    }
-    ca_mutex_unlock(g_context.blockDataListMutex);
-
-    return CA_STATUS_OK;
-}
-
-CAResult_t CARemoveAllBlockDataFromList()
-{
-    OIC_LOG(DEBUG, TAG, "CARemoveAllBlockDataFromList");
-
-    ca_mutex_lock(g_context.blockDataListMutex);
-
-    size_t len = u_arraylist_length(g_context.dataList);
-    for (size_t i = len; i > 0; i--)
-    {
-        CABlockData_t *removedData = u_arraylist_remove(g_context.dataList, i - 1);
-        if (removedData)
-        {
-            // destroy memory
-            if (removedData->sentData)
-            {
-                CADestroyDataSet(removedData->sentData);
-            }
-            CADestroyBlockID(removedData->blockDataId);
-            OICFree(removedData->payload);
-            OICFree(removedData);
         }
     }
     ca_mutex_unlock(g_context.blockDataListMutex);

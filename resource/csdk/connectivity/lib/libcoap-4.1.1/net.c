@@ -324,23 +324,20 @@ coap_new_context(const coap_address_t *listen_addr)
 #if defined(WITH_POSIX)
     coap_context_t *c = coap_malloc( sizeof( coap_context_t ) );
     int reuse = 1;
-#elif WITH_CONTIKI
-    coap_context_t *c =NULL;
-    if (initialized)
-    {
-        return NULL;
-    }
-#elif WITH_LWIP
-    coap_context_t *c = memp_malloc(MEMP_COAP_CONTEXT);
 #endif /* WITH_POSIX */
+#ifdef WITH_LWIP
+    coap_context_t *c = memp_malloc(MEMP_COAP_CONTEXT);
+#endif /* WITH_LWIP */
+#ifdef WITH_CONTIKI
+    coap_context_t *c;
+
+    if (initialized)
+    return NULL;
+#endif /* WITH_CONTIKI */
+
     if (!listen_addr)
     {
         coap_log(LOG_EMERG, "no listen address specified\n");
-#if defined(WITH_POSIX)
-        coap_free_context(c);
-#elif WITH_LWIP
-        memp_free(c);
-#endif
         return NULL;
     }
 

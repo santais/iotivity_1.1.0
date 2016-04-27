@@ -26,10 +26,10 @@
 #include "caipinterface.h"
 
 #include <Arduino.h>
-#include <Ethernet2.h>
+#include <Ethernet.h>
 #include <socket.h>
-#include <w5500.h>
-#include <EthernetUdp2.h>
+#include <w5100.h>
+#include <EthernetUdp.h>
 #include <IPAddress.h>
 
 #include "logger.h"
@@ -63,7 +63,7 @@ void CAArduinoGetInterfaceAddress(uint32_t *address)
 
     //TODO : Fix this for scenarios when this API is invoked when device is not connected
     uint8_t rawIPAddr[4];
-    w5500.getIPAddress(rawIPAddr);
+    W5100.getIPAddress(rawIPAddr);
     *address = (uint32_t) rawIPAddr;
 
     OIC_LOG_V(DEBUG, TAG, "address:%d.%d.%d.%d", rawIPAddr[0], rawIPAddr[1],

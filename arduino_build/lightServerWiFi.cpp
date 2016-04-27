@@ -132,7 +132,7 @@ void EventCallbackInApp(ESResult esResult, ESEnrolleeState enrolleeState)
             g_ProvisioningSucceeded = true;
         }
 
-        if(enrolleeState == ES_PROVISIONED_STATE && esResult == ES_OK)
+        if(enrolleeState == ES_PROVISIONED_STATE)
         {
             // Create the Light resource.
             createLightResource();
@@ -159,6 +159,7 @@ void startProvisioning()
 {
     OIC_LOG(DEBUG, TAG, "ESInitResources is invoked...");
 
+    delay(2000);
     // Initialize the OC Stack in Server mode
     if (OCInit(NULL, 0, OC_SERVER) != OC_STACK_OK)
     {
@@ -257,6 +258,7 @@ int rdDiscoverCallback(char addr[MAX_ADDR_STR_SIZE], uint16_t port)
     return 0;
 }*/
 
+
 //The setup function is called once at startup of the sketch
 void setup()
 {
@@ -265,11 +267,13 @@ void setup()
    	OIC_LOG_INIT();
     OIC_LOG(DEBUG, TAG, ("OCServer is starting..."));
 
+    delay(1000);
     // Start the onboarding process
     while(StartEasySetup() != ES_OK);
 
     // Start provisioning
     startProvisioning();
+
 }
 
 // The loop function is caplled in an endless loop

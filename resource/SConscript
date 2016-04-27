@@ -30,8 +30,9 @@ Import('env')
 target_os = env.get('TARGET_OS')
 src_dir = env.get('SRC_DIR')
 
-# Build liblogger
-SConscript('csdk/logger/SConscript')
+if target_os not in ['tizen']:
+	# Build liblogger
+	SConscript('csdk/logger/SConscript')
 
 if target_os not in ['arduino', 'darwin', 'ios', 'android']:
 	env.AppendUnique(LIBS=['rt'])
@@ -84,5 +85,5 @@ elif target_os == 'darwin':
 	# Build C stack's unit tests.
 	SConscript('unit_tests.scons')
 
-#elif target_os == 'arduino':
-#	SConscript('csdk/stack/samples/arduino/SimpleClientServer/ocserver/SConscript')
+elif target_os == 'arduino':
+	SConscript('csdk/stack/samples/arduino/SimpleClientServer/ocserver/SConscript')

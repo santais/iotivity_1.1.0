@@ -37,15 +37,19 @@ extern "C"
 
 static const uint16_t GATT_ERROR = 133;
 
-static const uint16_t STATE_SEND_NONE = 1;
-static const uint16_t STATE_SEND_SUCCESS = 2;
-static const uint16_t STATE_SEND_FAIL = 3;
-static const uint16_t STATE_SENDING = 4;
+static const uint16_t STATE_CHARACTER_SET = 2;
+static const uint16_t STATE_CHARACTER_UNSET = 1;
+static const uint16_t STATE_CHARACTER_NO_CHANGE = 0;
+
+static const uint16_t STATE_SEND_NONE = 0;
+static const uint16_t STATE_SEND_SUCCESS = 1;
+static const uint16_t STATE_SEND_FAILED = 2;
 
 typedef struct le_state_info
 {
     char address[CA_MACADDR_SIZE];
-    uint16_t connectedState;
+    jint connectedState;
+    uint16_t notificationState;
     uint16_t sendState;
     jboolean autoConnectFlag;
 } CALEState_t;
@@ -176,6 +180,13 @@ CAResult_t CALEClientSendMulticastMessageImpl(JNIEnv *env, const uint8_t *data,
                                               const uint32_t dataLen);
 
 /**
+ * check whether it is connected or not with remote address.
+ * @param[in]   address               remote address.
+ * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
+ */
+CAResult_t CALECheckSendState(const char* address);
+
+/**
  * send data to remote device.
  * if it isn't connected yet. connect LE before try to send data.
  * @param[in]   env                   JNI interface pointer.
@@ -261,23 +272,20 @@ void CALEClientSetScanFlag(bool flag);
 CAResult_t CALEClientStopScanImpl(JNIEnv *env, jobject callback);
 
 /**
- * set flag into State List.
+ * set auto connect flag for connectGatt API.
  * @param[in]   env                   JNI interface pointer.
  * @param[in]   jni_address           remote address.
- * @param[in]   state_idx             state index.
  * @param[in]   flag                  auto connect flag.
  */
-CAResult_t CALEClientSetFlagToState(JNIEnv *env, jstring jni_address,
-                                    jint state_idx, jboolean flag);
+CAResult_t CALEClientSetAutoConnectFlag(JNIEnv *env, jstring jni_address, jboolean flag);
 
 /**
- * get flag from State List.
+ * get auto connect flag.
  * @param[in]   env                   JNI interface pointer.
  * @param[in]   jni_address           remote address.
- * @param[in]   state_idx             state index.
- * @return  current flag;
+ * @return  current auto connect flag;
  */
-jboolean CALEClientGetFlagFromState(JNIEnv *env, jstring jni_address, jint state_idx);
+jboolean CALEClientGetAutoConnectFlag(JNIEnv *env, jstring jni_address);
 
 /**
  * connect to gatt server hosted.
@@ -497,12 +505,20 @@ jstring CALEClientGetLEAddressFromBTDevice(JNIEnv *env, jobject bluetoothDevice)
 /**
  * update new state information.
  * @param[in]   address               remote address.
- * @param[in]   state_type            state type.
- * @param[in]   target_state          state index to update.
+ * @param[in]   connectedState        connection state.
+ * @param[in]   notificationState     whether characteristic notification already set or not.
+ * @param[in]   sendState             whether sending was success or not.
  * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
  */
-CAResult_t CALEClientUpdateDeviceState(const char* address, uint16_t state_type,
-                                       uint16_t target_state);
+CAResult_t CALEClientUpdateDeviceState(const char* address, uint32_t connectedState,
+                                       uint16_t notificationState, uint16_t sendState);
+
+/**
+ * add new state to state list.
+ * @param[in]   state                 new state.
+ * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
+ */
+CAResult_t CALEClientAddDeviceStateToList(CALEState_t* state);
 
 /**
  * check whether the remote address is existed or not.
@@ -539,14 +555,18 @@ CAResult_t CALEClientRemoveDeviceState(const char* remoteAddress);
 CALEState_t* CALEClientGetStateInfo(const char* remoteAddress);
 
 /**
- * check whether the remote address has same state with target state.
+ * check whether the remote address is connected or not.
  * @param[in]   remoteAddress         remote address.
- * @param[in]   state_type            state_type.
- * @param[in]   target_state          state index to check.
  * @return  true or false.
  */
-bool CALEClientIsValidState(const char* remoteAddress, uint16_t state_type,
-                            uint16_t target_state);
+bool CALEClientIsConnectedDevice(const char* remoteAddress);
+
+/**
+ * check whether the remote address set CharacteristicNotification or not.
+ * @param[in]   remoteAddress         remote address.
+ * @return  true or false.
+ */
+bool CALEClientIsSetCharacteristic(const char* remoteAddress);
 
 /**
  * create scan device list.

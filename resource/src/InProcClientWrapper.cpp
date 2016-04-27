@@ -142,9 +142,9 @@ namespace OC
 
         if(clientResponse->result != OC_STACK_OK)
         {
-            /*oclog() << "listenCallback(): failed to create resource. clientResponse: "
+            oclog() << "listenCallback(): failed to create resource. clientResponse: "
                     << clientResponse->result
-                    << std::flush;*/
+                    << std::flush;
 
             return OC_STACK_KEEP_TRANSACTION;
         }
@@ -165,13 +165,19 @@ namespace OC
             return OC_STACK_KEEP_TRANSACTION;
         }
 
-        ListenOCContainer container(clientWrapper, clientResponse->devAddr,
-                                reinterpret_cast<OCDiscoveryPayload*>(clientResponse->payload));
-        // loop to ensure valid construction of all resources
-        for(auto resource : container.Resources())
-        {
-            std::thread exec(context->callback, resource);
-            exec.detach();
+        try{
+            ListenOCContainer container(clientWrapper, clientResponse->devAddr,
+                                    reinterpret_cast<OCDiscoveryPayload*>(clientResponse->payload));
+            // loop to ensure valid construction of all resources
+            for(auto resource : container.Resources())
+            {
+                std::thread exec(context->callback, resource);
+                exec.detach();
+            }
+        }
+        catch (std::exception &e){
+            oclog() << "Exception in listCallback, ignoring response: "
+                    << e.what() << std::flush;
         }
 
 

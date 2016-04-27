@@ -27,7 +27,6 @@
 #include "oic_string.h"
 #include "cathreadpool.h"
 #include "uarraylist.h"
-#include "caadapterutils.h"
 
 #define ERROR_CODE (-1)
 #define TAG PCF("OIC_CA_EDR_UTILS")
@@ -50,11 +49,19 @@ jstring CAEDRNativeGetAddressFromDeviceSocket(JNIEnv *env, jobject bluetoothSock
         return NULL;
     }
 
-    jmethodID jni_mid_getRemoteDevice = CAGetJNIMethodID(
-            env, CLASSPATH_BT_SOCKET, "getRemoteDevice", "()Landroid/bluetooth/BluetoothDevice;");
+    jclass jni_cid_BTSocket = (*env)->FindClass(env, CLASSPATH_BT_SOCKET);
+    if (!jni_cid_BTSocket)
+    {
+        OIC_LOG(ERROR, TAG, "jni_cid_BTSocket is null");
+        return NULL;
+    }
+
+    jmethodID jni_mid_getRemoteDevice = (*env)->GetMethodID(
+            env, jni_cid_BTSocket, "getRemoteDevice", "()Landroid/bluetooth/BluetoothDevice;");
     if (!jni_mid_getRemoteDevice)
     {
         OIC_LOG(ERROR, TAG, "jni_mid_getRemoteDevice is null");
+        (*env)->DeleteLocalRef(env, jni_cid_BTSocket);
         return NULL;
     }
 
@@ -63,29 +70,42 @@ jstring CAEDRNativeGetAddressFromDeviceSocket(JNIEnv *env, jobject bluetoothSock
     if (!jni_obj_remoteBTDevice)
     {
         OIC_LOG(ERROR, TAG, "jni_obj_remoteBTDevice is null");
+        (*env)->DeleteLocalRef(env, jni_cid_BTSocket);
         return NULL;
     }
 
-    jmethodID j_mid_getAddress = CAGetJNIMethodID(env, CLASSPATH_BT_DEVICE,
-                                                  "getAddress",
-                                                  METHODID_STRINGNONPARAM);
+    jclass jni_cid_BTDevice = (*env)->FindClass(env, CLASSPATH_BT_DEVICE);
+    if (!jni_cid_BTDevice)
+    {
+        OIC_LOG(ERROR, TAG, "jni_cid_BTDevice is null");
+        (*env)->DeleteLocalRef(env, jni_obj_remoteBTDevice);
+        (*env)->DeleteLocalRef(env, jni_cid_BTSocket);
+        return NULL;
+    }
+    jmethodID j_mid_getAddress = (*env)->GetMethodID(env, jni_cid_BTDevice, "getAddress",
+                                                     METHODID_STRINGNONPARAM);
     if (!j_mid_getAddress)
     {
         OIC_LOG(ERROR, TAG, "j_mid_getAddress is null");
         (*env)->DeleteLocalRef(env, jni_obj_remoteBTDevice);
+        (*env)->DeleteLocalRef(env, jni_cid_BTDevice);
+        (*env)->DeleteLocalRef(env, jni_cid_BTSocket);
         return NULL;
     }
 
-    jstring j_str_address = (*env)->CallObjectMethod(env, jni_obj_remoteBTDevice,
-                                                     j_mid_getAddress);
+    jstring j_str_address = (*env)->CallObjectMethod(env, jni_obj_remoteBTDevice, j_mid_getAddress);
     if (!j_str_address)
     {
         OIC_LOG(ERROR, TAG, "j_str_address is null");
         (*env)->DeleteLocalRef(env, jni_obj_remoteBTDevice);
+        (*env)->DeleteLocalRef(env, jni_cid_BTDevice);
+        (*env)->DeleteLocalRef(env, jni_cid_BTSocket);
         return NULL;
     }
 
     (*env)->DeleteLocalRef(env, jni_obj_remoteBTDevice);
+    (*env)->DeleteLocalRef(env, jni_cid_BTDevice);
+    (*env)->DeleteLocalRef(env, jni_cid_BTSocket);
 
     return j_str_address;
 }
@@ -195,8 +215,15 @@ jobjectArray CAEDRNativeGetBondedDevices(JNIEnv *env)
 
     // Convert the set to an object array
     // object[] array = Set<BluetoothDevice>.toArray();
-    jmethodID jni_mid_toArray = CAGetJNIMethodID(env, "java/util/Set",
-                                                 "toArray", "()[Ljava/lang/Object;");
+    jclass jni_cid_Set = (*env)->FindClass(env, "java/util/Set");
+    if (!jni_cid_Set)
+    {
+        OIC_LOG(ERROR, TAG, "jni_cid_Set is null");
+        goto exit;
+    }
+    jmethodID jni_mid_toArray = (*env)->GetMethodID(env, jni_cid_Set, "toArray",
+                                                    "()[Ljava/lang/Object;");
+
     if (!jni_mid_toArray)
     {
         OIC_LOG(ERROR, TAG, "jni_mid_toArray is null");
@@ -303,11 +330,15 @@ jstring CAEDRNativeGetAddressFromBTDevice(JNIEnv *env, jobject bluetoothDevice)
         OIC_LOG(ERROR, TAG, "bluetoothDevice is null");
         return NULL;
     }
+    jclass jni_cid_device_list = (*env)->FindClass(env, "android/bluetooth/BluetoothDevice");
+    if (!jni_cid_device_list)
+    {
+        OIC_LOG(ERROR, TAG, "jni_cid_device_list is null");
+        return NULL;
+    }
 
-    jmethodID jni_mid_getAddress = CAGetJNIMethodID(env,
-                                                    CLASSPATH_BT_DEVICE,
-                                                    "getAddress",
-                                                    METHODID_STRINGNONPARAM);
+    jmethodID jni_mid_getAddress = (*env)->GetMethodID(env, jni_cid_device_list, "getAddress",
+                                                       METHODID_STRINGNONPARAM);
     if (!jni_mid_getAddress)
     {
         OIC_LOG(ERROR, TAG, "jni_mid_getAddress is null");
@@ -380,7 +411,7 @@ void CAEDRNativeAddDeviceStateToList(CAConnectedDeviceInfo_t *deviceInfo)
         CAEDRNativeRemoveDevice((const char*) deviceInfo->address);
     }
     u_arraylist_add(g_deviceStateList, deviceInfo); // update new state
-    OIC_LOG_V(DEBUG, TAG, "add new device state[%d] to list", deviceInfo->state);
+    OIC_LOG_V(DEBUG, TAG, "Set State Info to List : %d", deviceInfo->state);
 }
 
 bool CAEDRNativeIsDeviceInList(const char* remoteAddress)
@@ -470,7 +501,7 @@ void CAEDRNativeRemoveDevice(const char *remoteAddress)
 
         if (!strcmp((const char*) deviceInfo->address, remoteAddress))
         {
-            OIC_LOG_V(DEBUG, TAG, "remove [%s] info from list", remoteAddress);
+            OIC_LOG_V(DEBUG, TAG, "remove state : %s", remoteAddress);
             OICFree(deviceInfo);
 
             u_arraylist_remove(g_deviceStateList, index);
@@ -558,44 +589,9 @@ void CAEDRNativeAddDeviceSocketToList(JNIEnv *env, jobject deviceSocket)
 
     if (!CAEDRNativeIsDeviceSocketInList(env, remoteAddress))
     {
-        CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) OICCalloc(1, sizeof(*socketInfo));
-        if (!socketInfo)
-        {
-            OIC_LOG(ERROR, TAG, "Out of memory");
-            return;
-        }
-
-        jmethodID jni_mid_getInputStream = CAGetJNIMethodID(env,
-                                                            "android/bluetooth/BluetoothSocket",
-                                                            "getInputStream",
-                                                            "()Ljava/io/InputStream;");
-        if (!jni_mid_getInputStream)
-        {
-            OIC_LOG(ERROR, TAG, "jni_mid_getInputStream is null");
-            return;
-        }
-
-        jobject jni_obj_inputStream = (*env)->CallObjectMethod(env, deviceSocket,
-                                                               jni_mid_getInputStream);
-        if (!jni_obj_inputStream)
-        {
-            OIC_LOG(ERROR, TAG, "jni_obj_inputStream is null");
-            return;
-        }
-
-        socketInfo->deviceSocket = (*env)->NewGlobalRef(env, deviceSocket);
-        socketInfo->inputStream = (*env)->NewGlobalRef(env, jni_obj_inputStream);
-        (*env)->DeleteLocalRef(env, jni_obj_inputStream);
-
-        bool result = u_arraylist_add(g_deviceObjectList, (void *) socketInfo);
-        if (!result)
-        {
-            OIC_LOG(ERROR, TAG, "u_arraylist_add failed.");
-            OICFree(socketInfo);
-            return;
-        }
-
-        OIC_LOG(DEBUG, TAG, "add new device socket object to list");
+        jobject gDeviceSocker = (*env)->NewGlobalRef(env, deviceSocket);
+        u_arraylist_add(g_deviceObjectList, gDeviceSocker);
+        OIC_LOG(DEBUG, TAG, "Set Socket Object to Array");
     }
     (*env)->ReleaseStringUTFChars(env, jni_remoteAddress, remoteAddress);
     (*env)->DeleteLocalRef(env, jni_remoteAddress);
@@ -614,15 +610,8 @@ bool CAEDRNativeIsDeviceSocketInList(JNIEnv *env, const char* remoteAddress)
     jint length = u_arraylist_length(g_deviceStateList);
     for (jint index = 0; index < length; index++)
     {
-        CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) u_arraylist_get(g_deviceObjectList,
-                                                                              index);
-        if (!socketInfo)
-        {
-            OIC_LOG(DEBUG, TAG, "socketInfo is null");
-            return false;
-        }
 
-        jobject jarrayObj = socketInfo->deviceSocket;
+        jobject jarrayObj = (jobject) u_arraylist_get(g_deviceObjectList, index);
         if (!jarrayObj)
         {
             OIC_LOG(DEBUG, TAG, "jarrayObj is null");
@@ -656,7 +645,7 @@ bool CAEDRNativeIsDeviceSocketInList(JNIEnv *env, const char* remoteAddress)
         }
     }
 
-    OIC_LOG(DEBUG, TAG, "there are no the Device obejct in list");
+    OIC_LOG(DEBUG, TAG, "there are no the Device obejct in list. we can add");
     return false;
 }
 
@@ -670,8 +659,14 @@ void CAEDRNativeSocketCloseToAll(JNIEnv *env)
         return;
     }
 
-    jmethodID jni_mid_close = CAGetJNIMethodID(env, CLASSPATH_BT_SOCKET,
-                                               "close", "()V");
+    jclass jni_cid_BTSocket = (*env)->FindClass(env, CLASSPATH_BT_SOCKET);
+    if (!jni_cid_BTSocket)
+    {
+        OIC_LOG(ERROR, TAG, "jni_cid_BTSocket is null");
+        return;
+    }
+
+    jmethodID jni_mid_close = (*env)->GetMethodID(env, jni_cid_BTSocket, "close", "()V");
     if (!jni_mid_close)
     {
         OIC_LOG(ERROR, TAG, "jni_mid_close is null");
@@ -713,26 +708,13 @@ void CAEDRNativeRemoveAllDeviceSocket(JNIEnv *env)
     jint length = u_arraylist_length(g_deviceStateList);
     for (jint index = 0; index < length; index++)
     {
-
-        CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) u_arraylist_get(g_deviceObjectList,
-                                                                              index);
-        if (!socketInfo)
+        jobject jarrayObj = (jobject) u_arraylist_get(g_deviceObjectList, index);
+        if (!jarrayObj)
         {
-            OIC_LOG(ERROR, TAG, "socketInfo is null");
-            continue;
+            OIC_LOG(ERROR, TAG, "jarrayObj is null");
+            return;
         }
-
-        jobject jdeviceSocket = socketInfo->deviceSocket;
-        if (jdeviceSocket)
-        {
-            (*env)->DeleteGlobalRef(env, jdeviceSocket);
-        }
-
-        jobject jinputStream = socketInfo->inputStream;
-        if (jinputStream)
-        {
-            (*env)->DeleteGlobalRef(env, jinputStream);
-        }
+        (*env)->DeleteGlobalRef(env, jarrayObj);
     }
 
     OICFree(g_deviceObjectList);
@@ -753,15 +735,7 @@ void CAEDRNativeRemoveDeviceSocket(JNIEnv *env, jobject deviceSocket)
     jint length = u_arraylist_length(g_deviceStateList);
     for (jint index = 0; index < length; index++)
     {
-        CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) u_arraylist_get(g_deviceObjectList,
-                                                                              index);
-        if (!socketInfo)
-        {
-            OIC_LOG(ERROR, TAG, "socketInfo is null");
-            continue;
-        }
-
-        jobject jarrayObj = socketInfo->deviceSocket;
+        jobject jarrayObj = (jobject) u_arraylist_get(g_deviceObjectList, index);
         if (!jarrayObj)
         {
             OIC_LOG(DEBUG, TAG, "jarrayObj is null");
@@ -789,11 +763,6 @@ void CAEDRNativeRemoveDeviceSocket(JNIEnv *env, jobject deviceSocket)
         {
             OIC_LOG_V(DEBUG, TAG, "remove object : %s", remoteAddress);
             (*env)->DeleteGlobalRef(env, jarrayObj);
-            jobject jinputStream = socketInfo->inputStream;
-            if (jinputStream)
-            {
-                (*env)->DeleteGlobalRef(env, jinputStream);
-            }
             (*env)->ReleaseStringUTFChars(env, jni_setAddress, setAddress);
             (*env)->ReleaseStringUTFChars(env, jni_remoteAddress, remoteAddress);
 
@@ -821,15 +790,7 @@ void CAEDRNativeRemoveDeviceSocketBaseAddr(JNIEnv *env, jstring address)
     jint length = u_arraylist_length(g_deviceStateList);
     for (jint index = 0; index < length; index++)
     {
-        CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) u_arraylist_get(g_deviceObjectList,
-                                                                              index);
-        if (!socketInfo)
-        {
-            OIC_LOG(ERROR, TAG, "socketInfo is null");
-            continue;
-        }
-
-        jobject jarrayObj = socketInfo->deviceSocket;
+        jobject jarrayObj = (jobject) u_arraylist_get(g_deviceObjectList, index);
         if (!jarrayObj)
         {
             OIC_LOG(DEBUG, TAG, "jarrayObj is null");
@@ -847,13 +808,8 @@ void CAEDRNativeRemoveDeviceSocketBaseAddr(JNIEnv *env, jstring address)
 
         if (!strcmp(setAddress, remoteAddress))
         {
-            OIC_LOG_V(DEBUG, TAG, "remove object : %s", remoteAddress);
+            OIC_LOG_V(ERROR, TAG, "remove object : %s", remoteAddress);
             (*env)->DeleteGlobalRef(env, jarrayObj);
-            jobject jinputStream = socketInfo->inputStream;
-            if (jinputStream)
-            {
-                (*env)->DeleteGlobalRef(env, jinputStream);
-            }
             (*env)->ReleaseStringUTFChars(env, jni_setAddress, setAddress);
             (*env)->ReleaseStringUTFChars(env, address, remoteAddress);
 
@@ -868,7 +824,7 @@ void CAEDRNativeRemoveDeviceSocketBaseAddr(JNIEnv *env, jstring address)
     return;
 }
 
-jobject CAEDRNativeGetDeviceSocket(uint32_t index)
+jobject CAEDRNativeGetDeviceSocket(uint32_t idx)
 {
     if (!g_deviceObjectList)
     {
@@ -876,15 +832,7 @@ jobject CAEDRNativeGetDeviceSocket(uint32_t index)
         return NULL;
     }
 
-    CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) u_arraylist_get(g_deviceObjectList,
-                                                                          index);
-    if (!socketInfo)
-    {
-        OIC_LOG(ERROR, TAG, "socketInfo is null");
-        return NULL;
-    }
-
-    jobject jarrayObj = socketInfo->deviceSocket;
+    jobject jarrayObj = (jobject) u_arraylist_get(g_deviceObjectList, idx);
     if (!jarrayObj)
     {
         OIC_LOG(ERROR, TAG, "jarrayObj is not available");
@@ -906,15 +854,7 @@ jobject CAEDRNativeGetDeviceSocketBaseAddr(JNIEnv *env, const char* remoteAddres
     jint length = u_arraylist_length(g_deviceStateList);
     for (jint index = 0; index < length; index++)
     {
-        CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) u_arraylist_get(g_deviceObjectList,
-                                                                              index);
-        if (!socketInfo)
-        {
-            OIC_LOG(ERROR, TAG, "socketInfo is null");
-            continue;
-        }
-
-        jobject jarrayObj = socketInfo->deviceSocket;
+        jobject jarrayObj = (jobject) u_arraylist_get(g_deviceObjectList, index);
         if (!jarrayObj)
         {
             OIC_LOG(ERROR, TAG, "jarrayObj is null");
@@ -943,31 +883,6 @@ jobject CAEDRNativeGetDeviceSocketBaseAddr(JNIEnv *env, const char* remoteAddres
     return NULL;
 }
 
-jobject CAEDRNativeGetInputStream(uint32_t index)
-{
-    if (!g_deviceObjectList)
-    {
-        OIC_LOG(ERROR, TAG, "gdeviceObjectList is null");
-        return NULL;
-    }
-
-    CAEDRSocketInfo_t *socketInfo = (CAEDRSocketInfo_t *) u_arraylist_get(g_deviceObjectList,
-                                                                          index);
-    if (!socketInfo)
-    {
-        OIC_LOG(ERROR, TAG, "socketInfo is null");
-        return NULL;
-    }
-
-    jobject jarrayObj = socketInfo->inputStream;
-    if (!jarrayObj)
-    {
-        OIC_LOG(ERROR, TAG, "jarrayObj is not available");
-        return NULL;
-    }
-    return jarrayObj;
-}
-
 uint32_t CAEDRGetSocketListLength()
 {
     if (!g_deviceObjectList)
@@ -976,7 +891,9 @@ uint32_t CAEDRGetSocketListLength()
         return 0;
     }
 
-    return u_arraylist_length(g_deviceObjectList);
+    uint32_t length = u_arraylist_length(g_deviceObjectList);
+
+    return length;
 }
 
 CAConnectedDeviceInfo_t *CAEDRGetDeviceInfoFromAddress(const char *remoteAddress)

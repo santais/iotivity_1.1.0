@@ -83,3 +83,7 @@ if target_os == 'arduino':
 	# Build the Arduino API
 	SConscript(build_dir + 'arduino_build/SConscript')
 
+if target_os == 'linux':
+	# Build the RPI API
+	SConscript(build_dir + 'raspberry_pi_build/SConscript')
+

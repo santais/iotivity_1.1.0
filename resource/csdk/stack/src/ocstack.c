@@ -1676,11 +1676,6 @@ void OCHandleRequests(const CAEndpoint_t* endPoint, const CARequestInfo_t* reque
     {
         serverRequest.reqTotalSize = requestInfo->info.payloadSize;
         serverRequest.payload = (uint8_t *) OICMalloc(requestInfo->info.payloadSize);
-        if (!serverRequest.payload)
-        {
-            OIC_LOG(ERROR, TAG, "Allocation for payload failed.");
-            return;
-        }
         memcpy (serverRequest.payload, requestInfo->info.payload,
                 requestInfo->info.payloadSize);
     }
@@ -1793,10 +1788,13 @@ void OCHandleRequests(const CAEndpoint_t* endPoint, const CARequestInfo_t* reque
     requestResult = HandleStackRequests (&serverRequest);
 
     // Send ACK to client as precursor to slow response
-    if(requestResult == OC_STACK_SLOW_RESOURCE)
+    if (requestResult == OC_STACK_SLOW_RESOURCE)
     {
-        SendDirectStackResponse(endPoint, requestInfo->info.messageId, CA_EMPTY,
-                    CA_MSG_ACKNOWLEDGE,0, NULL, NULL, 0, NULL);
+        if (requestInfo->info.type == CA_MSG_CONFIRM)
+        {
+            SendDirectStackResponse(endPoint, requestInfo->info.messageId, CA_EMPTY,
+                                    CA_MSG_ACKNOWLEDGE,0, NULL, NULL, 0, NULL);
+        }
     }
     else if(requestResult != OC_STACK_OK)
     {
@@ -2074,7 +2072,7 @@ OCStackResult OCInit1(OCMode mode, OCTransportFlags serverFlags, OCTransportFlag
 #endif
 
 #ifdef TCP_ADAPTER
-    if (result == OC_STACK_OK)
+    if(result == OC_STACK_OK)
     {
         result = InitializeKeepAlive(myStackMode);
     }
@@ -2475,13 +2473,6 @@ OCStackResult OCDoResource(OCDoHandle *handle,
     OCDevAddr *devAddr = NULL;
     char *resourceUri = NULL;
     char *resourceType = NULL;
-
-    // This validation is broken, but doesn't cause harm
-    size_t uriLen = strlen(requestUri );
-    if ((result = verifyUriQueryLength(requestUri , uriLen)) != OC_STACK_OK)
-    {
-        goto exit;
-    }
 
     /*
      * Support original behavior with address on resourceUri argument.
@@ -3933,17 +3924,17 @@ OCStackResult OCDoDirectPairing(OCDPDev_t* peer, OCPrm_t pmSel, char *pinNumber,
                                                      OCDirectPairingCB resultCallback)
 {
     OIC_LOG(INFO, TAG, "Start OCDoDirectPairing");
-    if(NULL ==  peer)
+    if(NULL ==  peer || NULL == pinNumber)
     {
         OIC_LOG(ERROR, TAG, "Invalid parameters");
         return OC_STACK_INVALID_PARAM;
     }
-
     if(NULL == resultCallback)
     {
-        OIC_LOG(ERROR, TAG, "Invalid parameters");
+        OIC_LOG(ERROR, TAG, "Invalid callback");
         return OC_STACK_INVALID_CALLBACK;
     }
+
     gDirectpairingCallback = resultCallback;
     return DPDirectPairing((OCDirectPairingDev_t*)peer, (OicSecPrm_t)pmSel,
                                            pinNumber, DirectPairingCB);
@@ -4252,11 +4243,7 @@ void insertResourceType(OCResource *resource, OCResourceType *resourceType)
             previous = pointer;
             pointer = pointer->next;
         }
-
-        if (previous)
-        {
-            previous->next = resourceType;
-        }
+        previous->next = resourceType;
     }
     resourceType->next = NULL;
 

@@ -50,17 +50,29 @@ void CAEDRServerJniInit();
 CAResult_t CAEDRServerStartAcceptThread();
 
 /**
- * Start receive thread.
+ * Start unicast server.
  * @param[in]   isSecured       unicast server type.
  * @return ::CA_STATUS_OK or Appropriate error code.
  */
-CAResult_t CAEDRStartReceiveThread(bool isSecured);
+CAResult_t CAEDRStartUnicastServer(bool isSecured);
 
 /**
- * Stop receive thread.
+ * Start multicast server.
  * @return ::CA_STATUS_OK or Appropriate error code.
  */
-CAResult_t CAEDRStopReceiveThread();
+CAResult_t CAEDRStartMulticastServer();
+
+/**
+ * Stop unicast server.
+ * @return ::CA_STATUS_OK or Appropriate error code.
+ */
+CAResult_t CAEDRStopUnicastServer();
+
+/**
+ * Stop multicast server.
+ * @return ::CA_STATUS_OK or Appropriate error code.
+ */
+CAResult_t CAEDRStopMulticastServer();
 
 /**
  * This function will read the data from remote device.

@@ -79,7 +79,7 @@ public:
     static std::string convertResourceDeviceTypeToString(const ResourceDeviceType &deviceType);
 
     /**
-     * @brief startCaching Starts caching the device
+     * @brief startCaching Start caching the device
      */
     void startCaching();
 

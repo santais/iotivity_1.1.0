@@ -453,7 +453,7 @@ TEST(StackResource, CreateResourceBadUri)
     OIC_LOG(INFO, TAG, "Starting CreateResourceBadUri test");
     InitStack(OC_SERVER);
 
-    const char *uri257 = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVW";
+    const char *uri65 = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKL";
 
     OCResourceHandle handle;
 
@@ -476,7 +476,7 @@ TEST(StackResource, CreateResourceBadUri)
     EXPECT_EQ(OC_STACK_INVALID_URI, OCCreateResource(&handle,
                                             "core.led",
                                             "core.rw",
-                                            uri257, //"/a/led",
+                                            uri65, //"/a/led",
                                             0,
                                             0,
                                             OC_DISCOVERABLE|OC_OBSERVABLE));

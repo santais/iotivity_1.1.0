@@ -254,6 +254,7 @@ int main(int /*argc*/, char** /*argv[]*/)
                     cout << "Invalid option" << endl;
                     break;
             }
+            fflush(stdin);
         }
     }
     catch (OCException& e)
