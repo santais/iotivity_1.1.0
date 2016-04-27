@@ -219,11 +219,11 @@ void OCRepPayloadDestroy(OCRepPayload* payload);
 // Discovery Payload
 OCDiscoveryPayload* OCDiscoveryPayloadCreate();
 
-OCSecurityPayload* OCSecurityPayloadCreate(const uint8_t* securityData, size_t size);
+OCSecurityPayload* OCSecurityPayloadCreate(const char* securityData);
 void OCSecurityPayloadDestroy(OCSecurityPayload* payload);
 
 void OCDiscoveryPayloadAddResource(OCDiscoveryPayload* payload, const OCResource* res,
-        uint16_t port);
+                                   uint16_t securePort, uint16_t tcpPort);
 void OCDiscoveryPayloadAddNewResource(OCDiscoveryPayload* payload, OCResourcePayload* res);
 bool OCResourcePayloadAddStringLL(OCStringLL **payload, const char* type);
 

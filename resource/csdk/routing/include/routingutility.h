@@ -91,7 +91,8 @@ typedef enum
 {
    NOR = 0,  /**< Normal Message. */
    ACK,      /**< Empty Acknowledgement message. */
-   RST      /**< Empty Reset message. */
+   RST,      /**< Empty Reset message. */
+   UNDEFINED /**< Message type not defined. */
 }MSGType;
 
 /**

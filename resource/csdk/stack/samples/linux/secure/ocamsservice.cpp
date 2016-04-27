@@ -16,7 +16,7 @@ int gQuitFlag = 0;
 
 //AMS service database, hold AMS service Identity and
 //the PSK credentials of trusted devices
-static char AMSS_DB_FILE[] = "oic_amss_db.dat";
+static char AMSS_DB_FILE[] = "oic_amss_db.json";
 
 /* SIGINT handler: set gQuitFlag to 1 for graceful termination */
 void handleSigInt(int signum)

@@ -31,7 +31,6 @@
 
 using namespace OC;
 
-static const char* SVR_DB_FILE_NAME = "./oic_svr_db_client.dat";
 typedef std::map<OCResourceIdentifier, std::shared_ptr<OCResource>> DiscoveredResourceMap;
 
 DiscoveredResourceMap discoveredResources;
@@ -433,7 +432,7 @@ void checkObserverValue(int value)
 
 static FILE* client_open(const char* /*path*/, const char *mode)
 {
-    return fopen(SVR_DB_FILE_NAME, mode);
+    return fopen("./oic_svr_db_client.json", mode);
 }
 
 int main(int argc, char* argv[]) {

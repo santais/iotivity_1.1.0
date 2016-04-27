@@ -50,7 +50,12 @@ if target_os not in ['windows', 'winrt']:
 
 examples_env.AppendUnique(LIBPATH = [env.get('BUILD_DIR')])
 examples_env.AppendUnique(RPATH = [env.get('BUILD_DIR')])
-examples_env.PrependUnique(LIBS = ['oc', 'octbstack', 'oc_logger', 'connectivity_abstraction', 'coap'])
+examples_env.PrependUnique(LIBS = ['coap'])
+examples_env.AppendUnique(LIBS = ['connectivity_abstraction'])
+examples_env.AppendUnique(LIBS = ['oc_logger'])
+examples_env.AppendUnique(LIBS = ['octbstack'])
+examples_env.AppendUnique(LIBS = ['oc'])
+
 if env.get('SECURED') == '1':
     examples_env.AppendUnique(LIBS = ['tinydtls'])
 
@@ -88,9 +93,9 @@ devicediscoveryclient = examples_env.Program('devicediscoveryclient', 'devicedis
 threadingsample = examples_env.Program('threadingsample', 'threadingsample.cpp')
 
 clientjson = examples_env.Install(env.get('BUILD_DIR') + '/resource/examples/',
-				env.get('SRC_DIR') + '/resource/examples/' + 'oic_svr_db_client.dat')
+				env.get('SRC_DIR') + '/resource/examples/' + 'oic_svr_db_client.json')
 serverjson = examples_env.Install(env.get('BUILD_DIR') + '/resource/examples/',
-				env.get('SRC_DIR') + '/resource/examples/' + 'oic_svr_db_server.dat')
+				env.get('SRC_DIR') + '/resource/examples/' + 'oic_svr_db_server.json')
 Alias("examples", [simpleserver, simpleclient,
 		simpleserverHQ, simpleclientHQ,
 		fridgeserver, fridgeclient,

@@ -100,7 +100,6 @@ if env.get('SECURED') == '1':
 		OCSRM_SRC + 'svcresource.c',
 		OCSRM_SRC + 'pconfresource.c',
 		OCSRM_SRC + 'dpairingresource.c',
-		OCSRM_SRC + 'verresource.c',
 		OCSRM_SRC + 'policyengine.c',
 		OCSRM_SRC + 'psinterface.c',
 		OCSRM_SRC + 'srmresourcestrings.c',
@@ -127,7 +126,6 @@ else:
 		OCSRM_SRC + 'pconfresource.c',
 		OCSRM_SRC + 'dpairingresource.c',
 		OCSRM_SRC + 'policyengine.c',
-		OCSRM_SRC + 'verresource.c',
 		OCSRM_SRC + 'psinterface.c',
 		OCSRM_SRC + 'srmresourcestrings.c',
 		OCSRM_SRC + 'srmutility.c',
@@ -148,5 +146,3 @@ libocsrm_env.InstallTarget(libocsrm, 'libocsrm')
 if target_os in ['linux', 'android', 'tizen'] and env.get('SECURED') == '1':
 	SConscript('provisioning/SConscript')
 
-if target_os in ['linux'] and env.get('SECURED') == '1':
-	SConscript('tool/SConscript')

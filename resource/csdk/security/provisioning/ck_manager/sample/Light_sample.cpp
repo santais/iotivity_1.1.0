@@ -42,7 +42,7 @@ const char *gResourceUri = (char *)"/a/light";
 //Secure Virtual Resource database for Iotivity Server
 //It contains Server's Identity and the PSK credentials
 //of other devices which the server trusts
-static char CRED_FILE[] = "oic_svr_db_light.dat";
+static char CRED_FILE[] = "oic_svr_db_light.json";
 
 
 //Structure to represent a light resource  and its attributes

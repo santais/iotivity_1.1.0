@@ -95,8 +95,7 @@ CAResult_t CAIPStartUnicastServer(const char *localAddress, uint16_t *port,
     uint8_t rawIPAddr[4];
     char address[16];
     W5100.getIPAddress(rawIPAddr);
-    snprintf(address, sizeof(address), "%d.%d.%d.%d", rawIPAddr[0], rawIPAddr[1], rawIPAddr[2],
-             rawIPAddr[3]);
+    sprintf(address, "%d.%d.%d.%d", rawIPAddr[0], rawIPAddr[1], rawIPAddr[2], rawIPAddr[3]);
     OIC_LOG_V(DEBUG, TAG, "address:%s", address);
     int serverFD = 1;
     if (CAArduinoInitUdpSocket(port, &serverFD) != CA_STATUS_OK)

@@ -19,7 +19,6 @@
  * *****************************************************************/
 
 #include "ocstack.h"
-#include "srmutility.h"
 #include "base64.h"
 #include "OCProvisioningManager.h"
 
@@ -280,7 +279,7 @@ namespace OC
         if(!resultCallback)
         {
             oclog() <<"Result callback can't be null";
-            return OC_STACK_INVALID_CALLBACK;
+            return OC_STACK_INVALID_PARAM;
         }
 
         OCStackResult result;
@@ -305,15 +304,10 @@ namespace OC
     OCStackResult OCSecureResource::provisionACL( const OicSecAcl_t* acl,
             ResultCallBack resultCallback)
     {
-        if(!acl)
+        if(!resultCallback || !acl)
         {
-            oclog() <<"ACL can't be null";
+            oclog() <<"Result callback or ACL can't be null";
             return OC_STACK_INVALID_PARAM;
-        }
-        if(!resultCallback)
-        {
-            oclog() <<"result callback can not be null";
-            return OC_STACK_INVALID_CALLBACK;
         }
 
         OCStackResult result;
@@ -342,7 +336,7 @@ namespace OC
         if(!resultCallback)
         {
             oclog() << "Result calback can't be null";
-            return OC_STACK_INVALID_CALLBACK;
+            return OC_STACK_INVALID_PARAM;
         }
 
         OCStackResult result;
@@ -373,8 +367,8 @@ namespace OC
     {
         if(!resultCallback)
         {
-            oclog() << "Result callback can not be null";
-            return OC_STACK_INVALID_CALLBACK;
+            oclog() << "Result calback can't be null";
+            return OC_STACK_INVALID_PARAM;
         }
 
         OCStackResult result;
@@ -406,7 +400,7 @@ namespace OC
         if(!resultCallback)
         {
             oclog() << "Result calback can't be null";
-            return OC_STACK_INVALID_CALLBACK;
+            return OC_STACK_INVALID_PARAM;
         }
 
         OCStackResult result;
@@ -435,7 +429,7 @@ namespace OC
         if(!resultCallback)
         {
             oclog() << "Result calback can't be null";
-            return OC_STACK_INVALID_CALLBACK;
+            return OC_STACK_INVALID_PARAM;
         }
 
         OCStackResult result;
@@ -490,18 +484,18 @@ namespace OC
 
     std::string OCSecureResource::getDeviceID()
     {
+        char base64Buff[B64ENCODE_OUT_SAFESIZE(sizeof(((OicUuid_t*)0)->id)) + 1] = {0,};
+        uint32_t outLen = 0;
+        B64Result b64Ret = B64_OK;
         std::ostringstream deviceId("");
-        char *devID = nullptr;
 
         validateSecureResource();
+        b64Ret = b64Encode(devPtr->doxm->deviceID.id, sizeof(devPtr->doxm->deviceID.id), base64Buff,
+                sizeof(base64Buff), &outLen);
 
-        if (OC_STACK_OK == ConvertUuidToStr(&(devPtr->doxm->deviceID), &devID))
+        if (B64_OK == b64Ret)
         {
-            deviceId << devID;
-        }
-        else
-        {
-            oclog() <<"Can not convert uuid to struuid";
+            deviceId << base64Buff;
         }
         return deviceId.str();
     }

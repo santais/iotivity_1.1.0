@@ -75,19 +75,17 @@ typedef OCStackResult (*OTMCreateSecureSession)(OTMContext_t* otmCtx);
 /*
  * Callback for creating CoAP payload.
  */
-typedef OCStackResult (*OTMCreatePayloadCallback)(OTMContext_t* otmCtx, uint8_t **payload,
-                                                  size_t *size);
+typedef char* (*OTMCreatePayloadCallback)(OTMContext_t* otmCtx);
 
 /**
  * Required callback for performing ownership transfer
  */
-typedef struct OTMCallbackData
-{
+typedef struct OTMCallbackData{
     OTMLoadSecret loadSecretCB;
     OTMCreateSecureSession createSecureSessionCB;
     OTMCreatePayloadCallback createSelectOxmPayloadCB;
     OTMCreatePayloadCallback createOwnerTransferPayloadCB;
-} OTMCallbackData_t;
+}OTMCallbackData_t;
 
 /**
  * Set the callbacks for ownership transfer

@@ -29,10 +29,6 @@
 #ifndef SINGLE_THREAD
 #include "caqueueingthread.h"
 #endif
-#if defined(__TIZEN__) || defined(__ANDROID__)
-#include "caleserver.h"
-#include "caleclient.h"
-#endif
 #include "oic_malloc.h"
 #include "oic_string.h"
 #include "caremotehandler.h"
@@ -2637,7 +2633,7 @@ static void CALERemoveSendQueueData(CAQueueingThread_t *queueHandle, ca_mutex mu
 
 static void CALERemoveReceiveQueueData(u_arraylist_t *dataInfoList, const char* address)
 {
-    OIC_LOG(DEBUG, CALEADAPTER_TAG, "CALERemoveSendQueueData");
+    OIC_LOG(DEBUG, CALEADAPTER_TAG, "CALERemoveReceiveQueueData");
 
     VERIFY_NON_NULL_VOID(dataInfoList, CALEADAPTER_TAG, "dataInfoList");
     VERIFY_NON_NULL_VOID(address, CALEADAPTER_TAG, "address");

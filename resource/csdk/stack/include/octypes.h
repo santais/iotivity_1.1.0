@@ -197,6 +197,9 @@ extern "C" {
 /** Port. */
 #define OC_RSRVD_HOSTING_PORT           "port"
 
+/** TCP Port. */
+#define OC_RSRVD_TCP_PORT               "tcp"
+
 /** For Server instance ID.*/
 #define OC_RSRVD_SERVER_INSTANCE_ID     "sid"
 
@@ -333,6 +336,18 @@ extern "C" {
 #define OC_RSRVD_RESOURCE_TYPE_RDPUBLISH "oic.wk.rdpub"
 
 /**
+ * Mark a parameter as unused. Used to prevent unused variable compiler warnings.
+ * Used in three cases:
+ * 1. in callbacks when one of the parameters are unused
+ * 2. when due to code changes a functions parameter is no longer
+ *    used but must be left in place for backward compatibility
+ *    reasons.
+ * 3. a variable is only used in the debug build variant and would
+ *    give a build warning in release mode.
+ */
+#define OC_UNUSED(x) (void)(x)
+
+/**
  * These enums (OCTransportAdapter and OCTransportFlags) must
  * be kept synchronized with OCConnectivityType (below) as well as
  * CATransportAdapter and CATransportFlags (in CACommon.h).
@@ -374,10 +389,10 @@ typedef enum
     OC_FLAG_SECURE     = (1 << 4),
 
     /** IPv4 & IPv6 auto-selection is the default.*/
-    /** IP adapter only.*/
+    /** IP & TCP adapter only.*/
     OC_IP_USE_V6       = (1 << 5),
 
-    /** IP adapter only.*/
+    /** IP & TCP adapter only.*/
     OC_IP_USE_V4       = (1 << 6),
 
     /** internal use only.*/
@@ -736,7 +751,7 @@ typedef enum
 
     /**
      * Error code from OTM
-     * This error is pushed from DTLS interface when handshake failure happens
+     * This error is plused from DTLS interface when handshake failure happens
      */
     OC_STACK_AUTHENTICATION_FAILURE,
 
@@ -794,7 +809,6 @@ typedef enum
  * Persistent storage handlers. An APP must provide OCPersistentStorage handler pointers
  * when it calls OCRegisterPersistentStorageHandler.
  * Persistent storage open handler points to default file path.
- * It should check file path and whether the file is symbolic link or no.
  * Application can point to appropriate SVR database path for it's IoTivity Server.
  */
 typedef struct {
@@ -960,33 +974,19 @@ typedef struct
 /** Enum to describe the type of object held by the OCPayload object.*/
 typedef enum
 {
-    /** Contents of the payload are invalid */
     PAYLOAD_TYPE_INVALID,
-    /** The payload is an OCDiscoveryPayload */
     PAYLOAD_TYPE_DISCOVERY,
-    /** The payload is an OCDevicePayload */
     PAYLOAD_TYPE_DEVICE,
-    /** The payload is an OCPlatformPayload */
     PAYLOAD_TYPE_PLATFORM,
-    /** The payload is an OCRepPayload */
     PAYLOAD_TYPE_REPRESENTATION,
-    /** The payload is an OCSecurityPayload */
     PAYLOAD_TYPE_SECURITY,
-    /** The payload is an OCPresencePayload */
     PAYLOAD_TYPE_PRESENCE,
-    /** The payload is an OCRDPayload */
     PAYLOAD_TYPE_RD
 } OCPayloadType;
 
-/**
- * A generic struct representing a payload returned from a resource operation
- *
- * A pointer to OCPayLoad can be cast to a more specific struct to access members
- * for the its type.
- */
 typedef struct
 {
-    /** The type of message that was received */
+    // The type of message that was received
     OCPayloadType type;
 } OCPayload;
 
@@ -1073,6 +1073,9 @@ typedef struct OCResourcePayload
     uint8_t bitmap;
     bool secure;
     uint16_t port;
+#ifdef TCP_ADAPTER
+    uint16_t tcpPort;
+#endif
     struct OCResourcePayload* next;
 } OCResourcePayload;
 
@@ -1233,10 +1236,8 @@ typedef struct
 typedef struct
 {
     OCPayload base;
-    uint8_t* securityData;
-    size_t payloadSize;
+    char* securityData;
 } OCSecurityPayload;
-
 #ifdef WITH_PRESENCE
 typedef struct
 {
@@ -1366,16 +1367,11 @@ typedef enum
 } OCEntityHandlerFlag;
 
 /**
- * Possible return values from client application callback
- *
- * A client application callback returns an OCStackApplicationResult to indicate whether
- * the stack should continue to keep the callback registered.
+ * Possible returned values from client application.
  */
 typedef enum
 {
-    /** Make no more calls to the callback and call the OCClientContextDeleter for this callback */
     OC_STACK_DELETE_TRANSACTION = 0,
-    /** Keep this callback registered and call it if an apropriate event occurs */
     OC_STACK_KEEP_TRANSACTION
 } OCStackApplicationResult;
 

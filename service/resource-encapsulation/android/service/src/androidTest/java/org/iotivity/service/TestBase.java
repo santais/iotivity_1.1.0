@@ -25,12 +25,11 @@ public abstract class TestBase extends InstrumentationTestCase {
     private OnResourceDiscoveredListener mOnResourceDiscoveredListener = new OnResourceDiscoveredListener() {
         @Override
         public void onResourceDiscovered(
-                RcsRemoteResourceObject remoteObject) {
-            if (mClient != null) {
+                RcsRemoteResourceObject RcsRemoteResourceObject) {
+            if (mClient != null)
                 return;
-            }
 
-            mClient = remoteObject;
+            mClient = RcsRemoteResourceObject;
             synchronized (mCond) {
                 mCond.notify();
             }
@@ -54,7 +53,8 @@ public abstract class TestBase extends InstrumentationTestCase {
         while (mClient == null) {
             try {
                 RcsDiscoveryManager.DiscoveryTask discoveryTask = RcsDiscoveryManager
-                        .getInstance().discoverResourceByType(RcsAddress.multicast(),
+                        .getInstance().discoverResourceByType(
+                                RcsAddress.multicast(), "/oic/res",
                                 RESOURCETYPE, mOnResourceDiscoveredListener);
 
                 synchronized (mCond) {
@@ -71,13 +71,9 @@ public abstract class TestBase extends InstrumentationTestCase {
     protected void setServerAttrbutes(RcsResourceAttributes attrs)
             throws RcsException {
         RcsResourceObject.AttributesLock lock = mServer.getAttributesLock();
-
-        try {
-            lock.lock().putAll(attrs);
-            lock.apply();
-        } finally {
-            lock.unlock();
-        }
+        lock.lock().putAll(attrs);
+        lock.apply();
+        lock.unlock();
     }
 
     @Override

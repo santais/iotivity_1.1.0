@@ -1,5 +1,3 @@
-//******************************************************************
-//
 // Copyright 2015 Intel Mobile Communications GmbH All Rights Reserved.
 //
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -19,29 +17,48 @@
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "gtest/gtest.h"
-#include "logger.h"
-#include "ocpayload.h"
 #include "ocstack.h"
+#include "ocpayload.h"
+#include "resourcemanager.h"
+#include "securevirtualresourcetypes.h"
+#include "credresource.h"
 #include "oic_malloc.h"
 #include "oic_string.h"
-#include "resourcemanager.h"
-#include "credresource.h"
-#include "securevirtualresourcetypes.h"
 #include "srmtestcommon.h"
 #include "srmutility.h"
-#include "psinterface.h"
-#include "security_internals.h"
+#include "logger.h"
 
 #define TAG "SRM-CRED-UT"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//Declare Cred resource methods for testing
+OCStackResult CreateCredResource();
+OCEntityHandlerResult CredEntityHandler (OCEntityHandlerFlag flag,
+                OCEntityHandlerRequest * ehRequest);
+char * BinToCredJSON(const OicSecCred_t * pstat);
+OicSecCred_t * JSONToCredBin(const char * jsonStr);
+void InitSecCredInstance(OicSecCred_t * cred);
+void DeleteCredList(OicSecCred_t* cred);
+const OicSecCred_t* GetCredResourceData(const OicUuid_t* subject);
+
+#ifdef __cplusplus
+}
+#endif
+
+
 OicSecCred_t * getCredList()
 {
+
+    OicSecCred_t * cred = NULL;
     size_t sz = 0;
-    OicSecCred_t *cred = (OicSecCred_t *)OICCalloc(1, sizeof(*cred));
+
+    cred = (OicSecCred_t*)OICCalloc(1, sizeof(OicSecCred_t));
     VERIFY_NON_NULL(TAG, cred, ERROR);
     cred->credId = 1234;
-    // use |memcpy| for copying full-lengthed UUID without null termination
-    memcpy(cred->subject.id, "1111111111111111", sizeof(cred->subject.id));
+    OICStrcpy((char *)cred->subject.id, sizeof(cred->subject.id), "subject1");
 
 #if 0
     cred->roleIdsLen = 2;
@@ -49,35 +66,41 @@ OicSecCred_t * getCredList()
     VERIFY_NON_NULL(TAG, cred->roleIds, ERROR);
     OICStrcpy((char *)cred->roleIds[0].id, sizeof(cred->roleIds[0].id), "role11");
     OICStrcpy((char *)cred->roleIds[1].id, sizeof(cred->roleIds[1].id), "role12");
+
 #endif
 
     cred->credType = SYMMETRIC_PAIR_WISE_KEY;
-    cred->privateData.data = (uint8_t *)OICCalloc(1, strlen("My private Key11") + 1);
+    cred->privateData.data = (char *)OICCalloc(1, strlen("My private Key11") + 1);
     VERIFY_NON_NULL(TAG, cred->privateData.data, ERROR);
-    OICStrcpy((char *)cred->privateData.data, strlen("My private Key11")+1,"My private Key11");
-    // use |memcpy| for copying full-lengthed UUID without null termination
-    memcpy(cred->rownerID.id, "aaaaaaaaaaaaaaaa", sizeof(cred->rownerID.id));
-    cred->next = (OicSecCred_t*)OICCalloc(1, sizeof(*cred->next));
+    OICStrcpy(cred->privateData.data, strlen("My private Key11")+1,"My private Key11");
+    cred->ownersLen = 1;
+    cred->owners = (OicUuid_t*)OICCalloc(cred->ownersLen, sizeof(OicUuid_t));
+    VERIFY_NON_NULL(TAG, cred->owners, ERROR);
+    OICStrcpy((char *)cred->owners[0].id, sizeof(cred->owners[0].id), "ownersId11");
+
+    cred->next = (OicSecCred_t*)OICCalloc(1, sizeof(OicSecCred_t));
     VERIFY_NON_NULL(TAG, cred->next, ERROR);
     cred->next->credId = 5678;
-    // use |memcpy| for copying full-lengthed UUID without null termination
-    memcpy(cred->next->subject.id, "2222222222222222", sizeof(cred->next->subject.id));
+    OICStrcpy((char *)cred->next->subject.id, sizeof(cred->next->subject.id), "subject2");
 #if 0
     cred->next->roleIdsLen = 0;
 #endif
     cred->next->credType = SYMMETRIC_PAIR_WISE_KEY;
     sz = strlen("My private Key21") + 1;
-    cred->next->privateData.data = (uint8_t *)OICCalloc(1, sz);
+    cred->next->privateData.data = (char *)OICCalloc(1, sz);
     VERIFY_NON_NULL(TAG, cred->next->privateData.data, ERROR);
-    OICStrcpy((char *)cred->next->privateData.data, sz, "My private Key21");
+    OICStrcpy(cred->next->privateData.data, sz,"My private Key21");
 #if 0
-    sz = strlen("My Public Key123") + 1;
+    sz = strlen("My Public Key123") + 1
     cred->next->publicData.data = (char *)OICCalloc(1, sz);
     VERIFY_NON_NULL(TAG, cred->next->publicData.data, ERROR);
     OICStrcpy(cred->next->publicData.data, sz,"My Public Key123");
 #endif
-    // use |memcpy| for copying full-lengthed UUID without null termination
-    memcpy(cred->next->rownerID.id, "bbbbbbbbbbbbbbbb", sizeof(cred->next->rownerID.id));
+    cred->next->ownersLen = 2;
+    cred->next->owners = (OicUuid_t*)OICCalloc(cred->next->ownersLen, sizeof(OicUuid_t));
+    VERIFY_NON_NULL(TAG, cred->next->owners, ERROR);
+    OICStrcpy((char *)cred->next->owners[0].id, sizeof(cred->next->owners[0].id), "ownersId21");
+    OICStrcpy((char *)cred->next->owners[1].id, sizeof(cred->next->owners[1].id), "ownersId22");
 
     return cred;
 
@@ -95,7 +118,7 @@ static void printCred(const OicSecCred_t * cred)
     EXPECT_TRUE(NULL != cred);
 
     const OicSecCred_t *credTmp1 = NULL;
-    for (credTmp1 = cred; credTmp1; credTmp1 = credTmp1->next)
+    for(credTmp1 = cred; credTmp1; credTmp1 = credTmp1->next)
     {
         OIC_LOG_V(INFO, TAG, "\ncred->credId = %d", credTmp1->credId);
         OIC_LOG_V(INFO, TAG, "cred->subject.id = %s", credTmp1->subject.id);
@@ -104,250 +127,214 @@ static void printCred(const OicSecCred_t * cred)
         {
             OIC_LOG_V(INFO, TAG, "cred->privateData.data = %s", credTmp1->privateData.data);
         }
-#ifdef __WITH_X509__
         if(credTmp1->publicData.data)
         {
            OIC_LOG_V(INFO, TAG, "cred->publicData.data = %s", credTmp1->publicData.data);
         }
-#endif /* __WITH_X509__ */
-	OIC_LOG_V(INFO, TAG, "cred->rownerID = %s", credTmp1->rownerID.id);
+        OIC_LOG_V(INFO, TAG, "cred->ownersLen = %zu", credTmp1->ownersLen);
+        for(size_t i = 0; i < cred->ownersLen; i++)
+        {
+            OIC_LOG_V(INFO, TAG, "cred->owners[%zu].id = %s", i, credTmp1->owners[i].id);
+        }
     }
 }
 
  //InitCredResource Tests
-TEST(CredResourceTest, InitCredResource)
+TEST(InitCredResourceTest, InitCredResource)
 {
     EXPECT_EQ(OC_STACK_INVALID_PARAM, InitCredResource());
 }
 
 //DeInitCredResource Tests
-TEST(CredResourceTest, DeInitCredResource)
+TEST(DeInitCredResourceTest, DeInitCredResource)
 {
     EXPECT_EQ(OC_STACK_INVALID_PARAM, DeInitCredResource());
 }
 
 //CreateCredResource Tests
-TEST(CredResourceTest, CreateCredResource)
+TEST(CreateCredResourceTest, CreateCredResource)
 {
     EXPECT_EQ(OC_STACK_INVALID_PARAM, CreateCredResource());
 }
 
  //CredEntityHandler Tests
-TEST(CredResourceTest, CredEntityHandlerWithDummyRequest)
+TEST(CredEntityHandlerTest, CredEntityHandlerWithDummyRequest)
 {
-    OCEntityHandlerRequest req = OCEntityHandlerRequest();
+    OCEntityHandlerRequest req;
     EXPECT_EQ(OC_EH_ERROR,
-            CredEntityHandler(OCEntityHandlerFlag::OC_REQUEST_FLAG, &req, NULL));
+            CredEntityHandler(OCEntityHandlerFlag::OC_REQUEST_FLAG, &req));
 }
 
-TEST(CredResourceTest, CredEntityHandlerWithNULLRequest)
+TEST(CredEntityHandlerTest, CredEntityHandlerWithNULLRequest)
 {
     EXPECT_EQ(OC_EH_ERROR,
-            CredEntityHandler(OCEntityHandlerFlag::OC_REQUEST_FLAG, NULL, NULL));
+            CredEntityHandler(OCEntityHandlerFlag::OC_REQUEST_FLAG, NULL));
 }
 
-TEST(CredResourceTest, CredEntityHandlerInvalidFlag)
+TEST(CredEntityHandlerTest, CredEntityHandlerInvalidFlag)
 {
-    OCEntityHandlerRequest req = OCEntityHandlerRequest();
+    OCEntityHandlerRequest req;
     EXPECT_EQ(OC_EH_ERROR,
-            CredEntityHandler(OCEntityHandlerFlag::OC_OBSERVE_FLAG, &req, NULL));
+            CredEntityHandler(OCEntityHandlerFlag::OC_OBSERVE_FLAG, &req));
 }
 
 //Cred DELETE request
-TEST(CredResourceTest, CredEntityHandlerDeleteTest)
+TEST(CredEntityHandlerTest, CredEntityHandlerDeleteTest)
 {
     OCEntityHandlerRequest ehReq =  OCEntityHandlerRequest();
     static OCPersistentStorage ps =  OCPersistentStorage();
     const OicSecCred_t* subjectCred1 = NULL;
     const OicSecCred_t* subjectCred2 = NULL;
+    char *jsonStr = NULL;
     OCEntityHandlerResult ehRet = OC_EH_ERROR;
-    char query[] = "subjectuuid=31313131-3131-3131-3131-313131313131"; //canonical uuid of subject1
+    char query[] = "sub=c3ViamVjdDE=";
 
     SetPersistentHandler(&ps, true);
 
     OicSecCred_t *cred = getCredList();
-    ASSERT_TRUE(NULL != cred);
-    uint8_t *payload = NULL;
-    size_t size = 0;
-    EXPECT_EQ(OC_STACK_OK, CredToCBORPayload(cred, &payload, &size));
-    if (!payload)
-    {
-        DeleteCredList(cred);
-    }
-    ASSERT_TRUE(NULL != payload);
+    VERIFY_NON_NULL(TAG, cred, ERROR);
+
+    jsonStr = BinToCredJSON(cred);
+    VERIFY_NON_NULL(TAG, jsonStr, ERROR);
 
     // Create Entity Handler POST request payload
     ehReq.method = OC_REST_POST;
-    ehReq.payload = (OCPayload *)OCSecurityPayloadCreate(payload, size);
-    if (!ehReq.payload)
-    {
-        OICFree(payload);
-        DeleteCredList(cred);
-    }
-    ASSERT_TRUE( NULL != ehReq.payload);
-    EXPECT_EQ(OC_EH_ERROR, CredEntityHandler(OC_REQUEST_FLAG, &ehReq, NULL));
+    ehReq.payload = (OCPayload*)OCSecurityPayloadCreate(jsonStr);
+    ehRet = CredEntityHandler(OC_REQUEST_FLAG, &ehReq);
+    EXPECT_TRUE(OC_EH_ERROR == ehRet);
 
     // Verify if SRM contains Credential for the subject
     subjectCred1 = GetCredResourceData(&cred->subject);
     EXPECT_TRUE(NULL != subjectCred1);
 
-    // Create Entity Handler DELETE request
-    ehReq.method = OC_REST_DELETE;
-    ehReq.query = (char *)OICCalloc(1, strlen(query)+1);
-    if (!ehReq.query)
-    {
-        OICFree(payload);
-        DeleteCredList(cred);
-    }
-    ASSERT_TRUE(NULL != ehReq.query);
-    OICStrcpy(ehReq.query, strlen(query)+1, query);
+   // Create Entity Handler DELETE request
+   ehReq.method = OC_REST_DELETE;
+   ehReq.query = (char*)OICMalloc(strlen(query)+1);
+   VERIFY_NON_NULL(TAG, ehReq.query, ERROR);
+   OICStrcpy(ehReq.query, strlen(query)+1, query);
 
-    ehRet = CredEntityHandler(OC_REQUEST_FLAG, &ehReq, NULL);
-    EXPECT_EQ(OC_EH_ERROR, ehRet);
+   ehRet = CredEntityHandler(OC_REQUEST_FLAG, &ehReq);
+   EXPECT_TRUE(OC_EH_ERROR == ehRet);
 
-    // Verify if SRM has deleted ACE for the subject
-    subjectCred2 = GetCredResourceData(&cred->subject);
-    EXPECT_TRUE(NULL == subjectCred2);
+   // Verify if SRM has deleted ACE for the subject
+   subjectCred2 = GetCredResourceData(&cred->subject);
+   EXPECT_TRUE(NULL == subjectCred2);
 
-    // Perform cleanup
-    OICFree(ehReq.query);
-    OICFree(payload);
-    DeInitCredResource();
-    DeleteCredList(cred);
-    OCPayloadDestroy((OCPayload *)ehReq.payload);
+exit:
+   // Perform cleanup
+   OICFree(ehReq.query);
+   OICFree(jsonStr);
+   OCPayloadDestroy(ehReq.payload);
+   if(NULL != cred)
+   {
+       DeInitCredResource();
+       DeleteCredList(cred);
+   }
 }
 
-TEST(CredResourceTest, CredToCBORPayloadNULL)
+//BinToCredJSON Tests
+TEST(BinToCredJSONTest, BinToCredJSONNullCred)
 {
-    OicSecCred_t *cred = getCredList();
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(NULL, NULL, 0));
-    size_t size = 0;
-    uint8_t *cborPayload = (uint8_t *) OICCalloc(1, 10);
-    if (!cborPayload)
-    {
-        DeleteCredList(cred);
-    }
-    ASSERT_TRUE(NULL != cborPayload);
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(cred, &cborPayload, &size));
-    OICFree(cborPayload);
-    cborPayload = NULL;
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(NULL, &cborPayload, &size));
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(cred, &cborPayload, 0));
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CredToCBORPayload(cred, NULL, &size));
-    DeleteCredList(cred);
+    char* value = BinToCredJSON(NULL);
+    EXPECT_TRUE(value == NULL);
 }
 
-TEST(CredResourceTest, CredToCBORPayloadVALID)
+TEST(BinToCredJSONTest, BinToCredJSONValidCred)
 {
-    uint8_t* payload = NULL;
-    size_t size = 0;
-    OicSecCred_t *cred = getCredList();
+    char* json = NULL;
+    OicSecCred_t * cred = getCredList();
 
-    EXPECT_EQ(OC_STACK_OK, CredToCBORPayload(cred, &payload, &size));
-    if (!payload)
-    {
-        DeleteCredList(cred);
-    }
-    ASSERT_TRUE(NULL != payload);
+    json = BinToCredJSON(cred);
 
+    OIC_LOG_V(INFO, TAG, "BinToCredJSON:%s\n", json);
+    EXPECT_TRUE(json != NULL);
     DeleteCredList(cred);
-    OICFree(payload);
+    OICFree(json);
 }
 
-TEST(CredResourceTest, CBORPayloadToCredVALID)
+//JSONToCredBin Tests
+TEST(JSONToCredBinTest, JSONToCredBinValidJSON)
 {
-    OicSecCred_t *cred1 = getCredList();
+    OicSecCred_t* cred1 = getCredList();
+    char* json = BinToCredJSON(cred1);
 
-    uint8_t *payload = NULL;
-    size_t size = 0;
-    EXPECT_EQ(OC_STACK_OK, CredToCBORPayload(cred1, &payload, &size));
+    EXPECT_TRUE(json != NULL);
+    OicSecCred_t *cred2 = JSONToCredBin(json);
+    EXPECT_TRUE(cred2 != NULL);
     DeleteCredList(cred1);
-    ASSERT_TRUE(NULL != payload);
-
-    OicSecCred_t *cred2 = NULL;
-    EXPECT_EQ(OC_STACK_OK, CBORPayloadToCred(payload, size, &cred2));
-    OICFree(payload);
-    ASSERT_TRUE(cred2 != NULL);
     DeleteCredList(cred2);
+    OICFree(json);
 }
 
-TEST(CredResourceTest, CBORPayloadToCredNULL)
+TEST(JSONToCredBinTest, JSONToCredBinNullJSON)
 {
-    OicSecCred_t *cred = NULL;
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, NULL));
-    uint8_t *cborPayload = (uint8_t *) OICCalloc(1, 10);
-    ASSERT_TRUE(NULL != cborPayload);
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(NULL, 0, &cred));
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(cborPayload, 0, NULL));
-    cred = getCredList();
-    EXPECT_EQ(OC_STACK_INVALID_PARAM, CBORPayloadToCred(cborPayload, 0, &cred));
-    DeleteCredList(cred);
-    OICFree(cborPayload);
+    OicSecCred_t *cred = JSONToCredBin(NULL);
+    EXPECT_TRUE(cred == NULL);
 }
 
 //GetCredResourceData Test
-TEST(CredResourceTest, GetCredResourceDataNULLSubject)
+TEST(CredGetResourceDataTest, GetCredResourceDataNULLSubject)
 {
-    EXPECT_EQ(NULL, GetCredResourceData(NULL));
+    EXPECT_TRUE(NULL == GetCredResourceData(NULL));
 }
 
-TEST(CredResourceTest, GenerateCredentialValidInput)
+TEST(CredGenerateCredentialTest, GenerateCredentialValidInput)
 {
-    OicUuid_t rownerID = {{0}};
-    OICStrcpy((char *)rownerID.id, sizeof(rownerID.id), "ownersId21");
+    OicUuid_t owners[1];
+    OICStrcpy((char *)owners[0].id, sizeof(owners[0].id), "ownersId21");
 
     OicUuid_t subject = {{0}};
     OICStrcpy((char *)subject.id, sizeof(subject.id), "subject11");
 
-    uint8_t privateKey[] = "My private Key11";
-    OicSecKey_t key = {privateKey, sizeof(privateKey)};
+    char privateKey[] = "My private Key11";
 
     OicSecCred_t * cred  = NULL;
+
     cred = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                              &key, &rownerID);
+                             privateKey, 1, owners);
     printCred(cred);
 
-    ASSERT_TRUE(NULL != cred);
+    EXPECT_TRUE(NULL != cred);
     DeleteCredList(cred);
 }
 
-TEST(CredResourceTest, GenerateAndAddCredentialValidInput)
+TEST(GenerateAndAddCredentialTest, GenerateAndAddCredentialValidInput)
 {
-    OicUuid_t rownerID = {{0}};
-    OICStrcpy((char *)rownerID.id, sizeof(rownerID.id), "ownersId11");
+    OicUuid_t owners[1];
+    OICStrcpy((char *)owners[0].id, sizeof(owners[0].id), "ownersId11");
 
     OicUuid_t subject = {{0}};
     OICStrcpy((char *)subject.id, sizeof(subject.id), "subject11");
 
-    uint8_t privateKey[] = "My private Key11";
-    OicSecKey_t key = {privateKey, sizeof(privateKey)};
+    char privateKey[] = "My private Key11";
 
-    OicSecCred_t *cred1  = NULL;
-    OicSecCred_t *headCred = NULL;
+    OicSecCred_t * cred1  = NULL;
+    OicSecCred_t * headCred = NULL;
 
     cred1 = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                               &key, &rownerID);
+                                 privateKey, 1, owners);
 
-    EXPECT_EQ(OC_STACK_OK, AddCredential(cred1));
+    EXPECT_EQ(OC_STACK_ERROR, AddCredential(cred1));
     headCred = cred1;
 
-    OICStrcpy((char *)rownerID.id, sizeof(rownerID.id), "ownersId22");
+    OICStrcpy((char *)owners[0].id, sizeof(owners[0].id), "ownersId22");
     OICStrcpy((char *)subject.id, sizeof(subject.id), "subject22");
     cred1 = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                               &key, &rownerID);
-    EXPECT_EQ(OC_STACK_OK, AddCredential(cred1));
+                                     privateKey, 1, owners);
+    EXPECT_EQ(OC_STACK_ERROR, AddCredential(cred1));
 
-    OICStrcpy((char *)rownerID.id, sizeof(rownerID.id), "ownersId33");
+    OICStrcpy((char *)owners[0].id, sizeof(owners[0].id), "ownersId33");
     OICStrcpy((char *)subject.id, sizeof(subject.id), "subject33");
     cred1 = GenerateCredential(&subject, SYMMETRIC_PAIR_WISE_KEY, NULL,
-                               &key, &rownerID);
-    EXPECT_EQ(OC_STACK_OK, AddCredential(cred1));
+                                     privateKey, 1, owners);
+    EXPECT_EQ(OC_STACK_ERROR, AddCredential(cred1));
 
     const OicSecCred_t* credList = GetCredResourceData(&headCred->subject);
 
     printCred(credList);
 
     DeleteCredList(headCred);
+
 }
 
 #if 0
@@ -357,3 +344,5 @@ TEST(CredGetResourceDataTest, GetCredResourceDataValidSubject)
     EXPECT_TRUE(NULL != GetCredResourceData(cred->subject));
 }
 #endif
+
+

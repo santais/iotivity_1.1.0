@@ -28,45 +28,36 @@ extern "C" {
 /**
  * Initialize Pstat resource by loading data from persistent storage.
  *
- * @return ::OC_STACK_OK for Success, otherwise some error value.
+ * @retval  OC_STACK_OK for Success, otherwise some error value
  */
 OCStackResult InitPstatResource();
 
 /**
  * Perform cleanup for Pstat resources.
  *
- * @return ::OC_STACK_OK for Success, otherwise some error value.
+ * @retval  OC_STACK_OK for Success, otherwise some error value
  */
 OCStackResult DeInitPstatResource();
 
 /**
- * This method converts PSTAT into the cbor payload.
+ * This method converts JSON PSTAT into binary PSTAT.
  *
- * @param pstat pointer to the initialized pstat structure.
- * @param cborPayload pointer to pstat cbor payload.
- * @param size of the cbor payload converted. It is 0 in case of error,
- * else a positive value if succcessful.
- *
- * @return ::OC_STACK_OK for Success, otherwise some error value.
+ * @param[in] jsonStr  pstat data in json string.
+ * @return pointer to OicSecPstat_t.
  */
- OCStackResult PstatToCBORPayload(const OicSecPstat_t *pstat, uint8_t **cborPayload,
-                                  size_t *cborSize);
+OicSecPstat_t * JSONToPstatBin(const char * jsonStr);
 
 /**
- * This method converts cbor into PSTAT data.
+ * This method converts pstat data into JSON format.
  *
- * @param cborPayload is the pstat data in cbor format.
- * @param size of the cborPayload. In case 0 is provided it assigns CBOR_SIZE (255) value.
- * @param pstat pointer to @ref OicSecPstat_t.
-  *
-  * @return ::OC_STACK_OK for Success, otherwise some error value.
+ * @param[in] pstat  pstat data in binary format.
+ * @return pointer to pstat json string.
  */
- OCStackResult CBORPayloadToPstat(const uint8_t *cborPayload, const size_t cborSize,
-                                  OicSecPstat_t **pstat);
+char * BinToPstatJSON(const OicSecPstat_t * pstat);
 
 /** This function deallocates the memory for OicSecPstat_t.
  *
- * @param pstat is the pointer to @ref OicSecPstat_t.
+ * @param[in] pstat  Pointer to OicSecPstat_t.
  */
 void DeletePstatBinData(OicSecPstat_t* pstat);
 
@@ -76,32 +67,10 @@ void DeletePstatBinData(OicSecPstat_t* pstat);
  */
 void RestorePstatToInitState();
 
-/**
- * Internal function to update resource owner
- *
- * @param newROwner new owner
- *
- * @retval ::OC_STACK_OK for Success, otherwise some error value
- */
-OCStackResult SetPstatRownerId(const OicUuid_t* newROwner);
-
-/**
- * Gets the OicUuid_t value for the rownerid of the pstat resource.
- *
- * @param rowneruuid a pointer to be assigned to the rowneruuid property
- * @return ::OC_STACK_OK if rowneruuid is assigned correctly, else ::OC_STACK_ERROR.
- */
-OCStackResult GetPstatRownerId(OicUuid_t *rowneruuid);
-
-/**
- * This function returns the "isop" status of the device.
- *
- * @return true iff pstat.isop == 1, else false
- */
-bool GetPstatIsop();
-
 #ifdef __cplusplus
 }
 #endif
 
 #endif //IOTVT_SRM_PSTATR_H
+
+

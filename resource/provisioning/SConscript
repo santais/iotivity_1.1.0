@@ -34,9 +34,7 @@ ocprovision_env.AppendUnique(CPPPATH = [
 		'../csdk/security/include',
 		'../csdk/security/provisioning/include',
 		'../csdk/security/provisioning/include/oxm',
-		'../csdk/security/provisioning/include/internal',
-        '../csdk/connectivity/lib/libcoap-4.1.1/',
-        '../../extlibs/cjson/'
+		'../csdk/security/provisioning/include/internal'
 		])
 
 target_os = env.get('TARGET_OS')

@@ -28,10 +28,10 @@ using namespace std;
 
 TEST(JustWorksOxMTest, NullParam)
 {
+
     OTMContext_t* otmCtx = NULL;
     OCStackResult res = OC_STACK_ERROR;
-    uint8_t *payloadRes = NULL;
-    size_t size = 0;
+    char* payloadRes;
 
     //LoadSecretJustWorksCallback always returns OC_STACK_OK.
     res = LoadSecretJustWorksCallback(otmCtx);
@@ -40,11 +40,11 @@ TEST(JustWorksOxMTest, NullParam)
     res = CreateSecureSessionJustWorksCallback(otmCtx);
     EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
 
-    res = CreateJustWorksSelectOxmPayload(otmCtx, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreateJustWorksSelectOxmPayload(otmCtx);
+    EXPECT_TRUE(NULL == payloadRes);
 
-    res = CreateJustWorksOwnerTransferPayload(otmCtx, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreateJustWorksOwnerTransferPayload(otmCtx);
+    EXPECT_TRUE(NULL == payloadRes);
 
     OTMContext_t otmCtx2;
     otmCtx2.selectedDeviceInfo = NULL;
@@ -56,32 +56,31 @@ TEST(JustWorksOxMTest, NullParam)
     res = CreateSecureSessionJustWorksCallback(&otmCtx2);
     EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
 
-    res = CreateJustWorksSelectOxmPayload(&otmCtx2, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreateJustWorksSelectOxmPayload(&otmCtx2);
+    EXPECT_TRUE(NULL == payloadRes);
 
-    res = CreateJustWorksOwnerTransferPayload(&otmCtx2, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreateJustWorksOwnerTransferPayload(&otmCtx2);
+    EXPECT_TRUE(NULL == payloadRes);
 }
 
 TEST(RandomPinOxMTest, NullParam)
 {
     OTMContext_t* otmCtx = NULL;
     OCStackResult res = OC_STACK_ERROR;
-    uint8_t *payloadRes = NULL;
-    size_t size = 0;
+    char* payloadRes;
 
     //LoadSecretJustWorksCallback always returns OC_STACK_OK.
     res = InputPinCodeCallback(otmCtx);
     EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
 
-    res = CreateSecureSessionRandomPinCallback(otmCtx);
+    res = CreateSecureSessionRandomPinCallbak(otmCtx);
     EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
 
-    res = CreatePinBasedSelectOxmPayload(otmCtx, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreatePinBasedSelectOxmPayload(otmCtx);
+    EXPECT_TRUE(NULL == payloadRes);
 
-    res = CreatePinBasedOwnerTransferPayload(otmCtx, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreatePinBasedOwnerTransferPayload(otmCtx);
+    EXPECT_TRUE(NULL == payloadRes);
 
     OTMContext_t otmCtx2;
     otmCtx2.selectedDeviceInfo = NULL;
@@ -90,12 +89,12 @@ TEST(RandomPinOxMTest, NullParam)
     res = InputPinCodeCallback(&otmCtx2);
     EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
 
-    res = CreateSecureSessionRandomPinCallback(&otmCtx2);
+    res = CreateSecureSessionRandomPinCallbak(&otmCtx2);
     EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
 
-    res = CreatePinBasedSelectOxmPayload(&otmCtx2, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreatePinBasedSelectOxmPayload(&otmCtx2);
+    EXPECT_TRUE(NULL == payloadRes);
 
-    res = CreatePinBasedOwnerTransferPayload(&otmCtx2, &payloadRes, &size);
-    EXPECT_TRUE(OC_STACK_INVALID_PARAM == res);
+    payloadRes = CreatePinBasedOwnerTransferPayload(&otmCtx2);
+    EXPECT_TRUE(NULL == payloadRes);
 }

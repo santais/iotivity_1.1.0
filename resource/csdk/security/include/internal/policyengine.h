@@ -31,6 +31,7 @@
 
 typedef struct AmsMgrContext AmsMgrContext_t;
 
+
 typedef enum PEState
 {
     STOPPED = 0,              //Policy engine state machine is not running
@@ -39,12 +40,12 @@ typedef enum PEState
     BUSY                      //Can't process new request as processing other requests
 } PEState_t;
 
+
 typedef struct PEContext
 {
     PEState_t   state;
     OicUuid_t   subject;
     char        resource[MAX_URI_LENGTH];
-    OicSecSvrType_t resourceType;
     uint16_t    permission;
     bool        matchingAclFound;
     bool        amsProcessing;
@@ -55,12 +56,13 @@ typedef struct PEContext
 /**
  * Check whether a request should be allowed.
  *
- * @param context is the pointer to Policy Engine context to use.
- * @param subjectId is the pointer to Id of the requesting entity.
- * @param resource is the pointer to URI of Resource being requested.
- * @param permission is the requested permission.
+ * @param   context     Pointer to Policy Engine context to use.
+ * @param   subjectId   Pointer to Id of the requesting entity.
+ * @param   resource    Pointer to URI of Resource being requested.
+ * @param   permission  Requested permission.
  *
- * @return ::ACCESS_GRANTED if request should go through, otherwise some flavor of ACCESS_DENIED.
+ * @return  ACCESS_GRANTED if request should go through,
+ *          otherwise some flavor of ACCESS_DENIED
  */
 SRMAccessResponse_t CheckPermission(
     PEContext_t     *context,
@@ -72,38 +74,34 @@ SRMAccessResponse_t CheckPermission(
  * Initialize the Policy Engine. Call this before calling CheckPermission().
  * TODO Eventually this and DeInit() need to be called from a new
  *      "SRMInit(SRMContext_t *)" function, TBD after BeachHead.
- * @param context is the pointer to Policy Engine context to initialize.
- *
- * @return ::OC_STACK_OK for Success, otherwise some error value.
+ * @param   context     Pointer to Policy Engine context to initialize.
+ * @return  OC_STACK_OK for Success, otherwise some error value
  */
 OCStackResult InitPolicyEngine(PEContext_t *context);
 
 /**
  * De-Initialize the Policy Engine. Call this before exiting to allow Policy
  * Engine to do cleanup on context.
- *
- * @param context is the pointer to Policy Engine context to de-initialize.
+ * @param   context     Pointer to Policy Engine context to de-initialize.
+ * @return  none
  */
 void DeInitPolicyEngine(PEContext_t *context);
 
 /**
- * Get CRUDN permission for a method.
- *
- * @param method is CRUDN permission being seeked.
- *
- * @return the uint16_t CRUDN permission .
+ * Return the uint16_t CRUDN permission corresponding to passed CAMethod_t.
  */
 uint16_t GetPermissionFromCAMethod_t(const CAMethod_t method);
+
 
 /*
  * This method reset Policy Engine context to default state and update
  * it's state to @param state.
  *
- * @param context is the policy engine context.
- * @param state set Policy engine state to this.
+ * @param context  Policy engine context.
+ * @param state    Set Policy engine state to this.
+ *
+ * @return         none
  */
 void SetPolicyEngineState(PEContext_t *context, const PEState_t state);
-
-typedef OCStackResult (*GetSvrRownerId_t)(OicUuid_t *rowner);
 
 #endif //IOTVT_SRM_PE_H
