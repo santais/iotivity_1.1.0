@@ -93,7 +93,7 @@ public:
         //URI of the resource
         std::string resourceURI = m_lightUri;
         //resource type name. In this case, it is light
-        std::string resourceTypeName = "core.light";
+        std::string resourceTypeName = "oic.d.light";
         // resource interface.
         std::string resourceInterface = DEFAULT_INTERFACE;
 
