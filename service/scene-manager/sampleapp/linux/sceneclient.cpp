@@ -235,6 +235,7 @@ void executeScene()
 }
 
 // --- Scene Manager Remote API sample
+
 void configurePlatform()
 {
     PlatformConfig config

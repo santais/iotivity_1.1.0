@@ -4,53 +4,20 @@
 #include "RCSResourceObject.h"
 #include "RCSResourceAttributes.h"
 #include "RCSException.h"
+#include "RCSRequest.h"
+#include "ConfigurationResource.h"
 
 #include <vector>
 #include <iostream>
+#include <functional>
 
-constexpr int NO_PORT = -1;
+#define UNUSED __attribute__((__unused__))
 
 using namespace OIC;
 using namespace OIC::Service;
 
-
-class RpiIOHandler {
-public:
-    enum class RPIOutputType {
-        HDMI,
-        AUX,
-        GPIO_DIGITAL,
-        GPIO_ANALOG,
-        VIRTUAL
-    };
-
-    enum class RPIInputType {
-        GPIO_DIGITAL
-    };
-
-private:
-    std::vector<int> m_ports;
-
-    RPIInputType m_inputType;
-    RPIOutputType m_outputType;
-
-public:
-    RpiIOHandler(int port, RPIInputType inputType, RPIOutputType outputType);
-
-    ~RpiIOHandler() {}
-
-    RpiIOHandler& addInputType(RPIInputType type);
-
-    RpiIOHandler& addOutputType(RPIOutputType type);
-
-    RpiIOHandler& addPortPin(int port);
-
-    RpiIOHandler& addPortPins(std::vector<int>&& ports);
-
-    RpiIOHandler& addPortPins(const std::vector<int>& ports);
-
-};
-
+typedef std::function<RCSSetResponse(const RCSRequest&, RCSResourceAttributes&)> setRequestHandlerCallback;
+typedef std::function<RCSSetResponse(const RCSRequest&, RCSResourceAttributes&)> setRPIRequestHandlerCallback;
 
 
 class RPIRCSResourceObject
@@ -60,6 +27,21 @@ public:
     typedef std::shared_ptr<const RPIRCSResourceObject> ConstPtr;
 
 public:
+
+    // Use default c++ libraries for copy constructor
+    RPIRCSResourceObject(const RPIRCSResourceObject&)            = default;
+    RPIRCSResourceObject(RPIRCSResourceObject&&)                 = default;
+
+    // Do not allow overload opeartions
+    RPIRCSResourceObject& operator=(const RPIRCSResourceObject&) = delete;
+    RPIRCSResourceObject& operator=(RPIRCSResourceObject&&)      = delete;
+
+    /**
+     * @brief RPIRCSResourceObject Set the internal parameters for this specific resource
+     * @param resourceTypes         The types associated with the resource
+     * @param resourceInterfaces    The interfaces associated with the resource
+     */
+    RPIRCSResourceObject(const std::string& uri, std::string& resourceType, std::string& resourceInterface);
 
     /**
      * @brief RPIRCSResourceObject Set the internal parameters for this specific resource
@@ -84,20 +66,6 @@ public:
      * @brief createResource Creates the resource
      */
     void createResource(bool discovery, bool observable, bool secured);
-
-    /**
-     * @brief setRpiOutputType  Set the output type
-     * @param type  Type to be set
-     * @param port  Port number if type is GPIO
-     */
-    void setRpiOutputType(RpiIOHandler::RPIOutputType &type, int port = -1);
-
-    /**
-     * @brief setRpiInputType   Set the input type
-     * @param type  Type of input. Only GPIO supported
-     * @param port  Port number if type is GPIO
-     */
-    void setRpiInputType(RpiIOHandler::RPIInputType &type, int port);
 
     /**
      * @brief addType
@@ -126,13 +94,31 @@ public:
     RCSResourceAttributes getAttributes();
 
     /**
-     * @brief The RpiIOHandler class
+     * @brief setAttributes
+     *
+     * @param attributes
      */
+    void setAttributes(const RCSResourceAttributes &attributes);
+    void setAttributes(RCSResourceAttributes &&attributes);
+
+    /**
+     * @brief getResourceObject
+     * @return
+     */
+    RCSResourceObject::Ptr getResourceObject();
+
+    /**
+     * @brief setReqHandler
+     * @param handler
+     */
+    void setReqHandler(setRPIRequestHandlerCallback handler);
 
 private:
 
     RPIRCSResourceObject() {}
 
+
+    RCSSetResponse setResponse(const RCSRequest& request, RCSResourceAttributes& attributes);
 
 private:
     /**
@@ -152,19 +138,14 @@ private:
     std::vector<std::string> m_resourceInterfaces;
 
     /**
-     * @brief m_rpiInputType Set the input gpio port type
-     */
-    RpiIOHandler::RPIInputType m_rpiInputType;
-
-    /**
-     * @brief m_outputType Determines the physical output
-     */
-    RpiIOHandler::RPIOutputType m_rpiOutputType;
-
-    /**
      * @brief m_uri Uri of the registered resource
      */
     std::string m_uri;
+
+    /**
+     * @brief m_callback
+     */
+    setRPIRequestHandlerCallback m_applicationCallback;
 
 
 protected:

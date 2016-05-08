@@ -46,6 +46,10 @@ static const char INTEL_WIFI_SHIELD_FW_VER[] = "1.2.0";
 char ssid[] = "EasySetup123";
 char pass[] = "EasySetup123";
 
+// Resources
+OCBaseResourceT* g_lightResource;
+OCBaseResourceT* g_buttonResource;
+
 int ConnectToNetwork()
 {
     char *fwVersion;
@@ -295,29 +299,29 @@ void setup()
     portLight.type = OUT;
 
     // Light resource
-    OCBaseResourceT *resourceLight = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
+    g_lightResource = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
                                               (OC_DISCOVERABLE | OC_OBSERVABLE), lightIOHandler, &portLight);
     
-    if(resourceLight != NULL)
+    if(g_lightResource != NULL)
     {
         OIC_LOG(INFO, TAG, "Light resource created successfully");
-        Serial.println((int)resourceLight->handle, HEX);
+        Serial.println((int)g_lightResource->handle, HEX);
     }
     else
     {
         OIC_LOG(DEBUG, TAG, "Unable to create light resource");
     }
-    resourceLight->name = "Mark's Light";
+    g_lightResource->name = "Mark's Light";
 
-    addType(resourceLight, OIC_TYPE_BINARY_SWITCH);
-    addType(resourceLight, OIC_TYPE_LIGHT_BRIGHTNESS);
+    addType(g_lightResource, OIC_TYPE_BINARY_SWITCH);
+    addType(g_lightResource, OIC_TYPE_LIGHT_BRIGHTNESS);
 
     OCRepPayloadValue powerValue;
     powerValue.b = true;
     powerValue.name = "power";
     powerValue.next = NULL;
     powerValue.type = OCREP_PROP_BOOL;
-    addAttribute(&resourceLight->attribute, &powerValue);
+    addAttribute(&g_lightResource->attribute, &powerValue);
 
     
     OCRepPayloadValue brightnessValue;
@@ -325,29 +329,29 @@ void setup()
     brightnessValue.name = "brightness";
     brightnessValue.next = NULL;
     brightnessValue.type = OCREP_PROP_INT;
-    addAttribute(&resourceLight->attribute, &brightnessValue);
+    addAttribute(&g_lightResource->attribute, &brightnessValue);
 
     /** Create Button Resource **/
     OCIOPort buttonPort;
     buttonPort.pin = TEST_BUT_PIN;
     buttonPort.type = IN;
 
-    OCBaseResourceT *buttonResource = createResource("/a/button", OIC_DEVICE_BUTTON, OC_RSRVD_INTERFACE_DEFAULT,
+    g_buttonResource = createResource("/a/button", OIC_DEVICE_BUTTON, OC_RSRVD_INTERFACE_DEFAULT,
                                             (OC_DISCOVERABLE | OC_OBSERVABLE), NULL, &buttonPort);
 
-    if(buttonResource != NULL)
+    if(g_buttonResource != NULL)
     {
         OIC_LOG(INFO, TAG, "Button resource created successfully");
         int pointer;
-        Serial.println((int)buttonResource->handle, HEX);
+        Serial.println((int)g_buttonResource->handle, HEX);
     }
     else
     {
         OIC_LOG(ERROR, TAG, "Unable to create the button resource");
     }
 
-    OCStackResult result = addType(buttonResource, OIC_TYPE_BINARY_SWITCH);
-    result = addInterface(buttonResource, OC_RSRVD_INTERFACE_READ);
+    OCStackResult result = addType(g_buttonResource, OIC_TYPE_BINARY_SWITCH);
+    result = addInterface(g_buttonResource, OC_RSRVD_INTERFACE_READ);
 
     if(result != OC_STACK_OK)
     {
@@ -359,7 +363,7 @@ void setup()
     buttonValue.name = "state";
     buttonValue.next = NULL;
     buttonValue.type = OCREP_PROP_BOOL;
-    addAttribute(&buttonResource->attribute, &buttonValue);
+    addAttribute(&g_buttonResource->attribute, &buttonValue);
 
     if(OCStartPresence(60 * 60) != OC_STACK_OK)
     {

@@ -66,8 +66,7 @@ controller_program_env.AppendUnique(LIBS = [
     'connectivity_abstraction',
     'coap',
     'pthread',
-    'libTGMSDKLibrary',
-    'dl'
+    'libTGMSDKLibrary'
     ])
 
 if env.get('SECURED') == '1':

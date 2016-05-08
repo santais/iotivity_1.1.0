@@ -66,7 +66,7 @@ namespace OIC { namespace Service
     class Controller
 	{
     private:
-		    typedef std::string ResourceKey;
+        typedef std::string ResourceKey;
 
         typedef std::unordered_map<ResourceKey, RCSDiscoveryManager::DiscoveryTask::Ptr>::const_iterator discoveryMapItr;
 

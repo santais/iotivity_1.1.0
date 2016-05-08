@@ -49,14 +49,35 @@ if env.get('SECURED') == '1':
 if 'rt' in rpi_env.get('LIBS'):
     rpi_env.Append(LIBS = ['rt'])
 
-rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x'])
-rpi_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
-rpi_env.AppendUnique(LIBS = ['pthread'])
+if env.get('SECURED') == '1':
+    rpi_env.AppendUnique(LIBS = ['tinydtls'])
+if 'rt' in rpi_env.get('LIBS'):
+    rpi_env.Append(LIBS = ['rt'])
+
+if target_os not in ['windows', 'winrt']:
+	rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x', '-Wno-error'])
+
+if target_os not in ['darwin', 'ios', 'windows', 'winrt']:
+	rpi_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
+
+if target_os == 'linux':
+	rpi_env.AppendUnique(LIBS = ['pthread'])
+
+if target_os == 'android':
+	rpi_env.AppendUnique(CXXFLAGS = ['-frtti', '-fexceptions'])
+	rpi_env.AppendUnique(LIBS = ['gnustl_shared','log'])
+
+	if not env.get('RELEASE'):
+		rpi_env.AppendUnique(LIBS = ['log'])
+
+
 
 ######################################################################
 # Test Programs
 ######################################################################
 RpiMain = rpi_env.Program('resource_test', 'resource_test.cpp')
+RpiMain = rpi_env.Program('controller', 'controller.cpp')
+RpiMain = rpi_env.Program('boostrapserver', 'bootstrapserver.cpp')
 
 
 rpi_env.InstallTarget(RpiMain, 'resource_test')

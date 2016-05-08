@@ -35,6 +35,7 @@ static const char TEST_LED_PIN = 5; // PWM Pin
 
 // Light Resource
 OCBaseResourceT *g_lightResource;
+OCBaseResourceT *g_buttonResource;
 
 /**
  * @var g_OnBoardingSucceeded
@@ -201,36 +202,36 @@ void createLightResource()
     portLight.type = OUT;
 
     // Light resource
-    OCBaseResourceT *resourceLight = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
+    g_lightResource = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
                                               (OC_DISCOVERABLE | OC_OBSERVABLE), lightIOHandler, &portLight);
 
-    if(resourceLight != NULL)
+    if(g_lightResource != NULL)
     {
         OIC_LOG(INFO, TAG, "Light resource created successfully");
-        Serial.println((int)resourceLight->handle, HEX);
+        Serial.println((int)g_lightResource->handle, HEX);
     }
     else
     {
         OIC_LOG(DEBUG, TAG, "Unable to create light resource");
     }
-    resourceLight->name = "Mark's Light";
+    g_lightResource->name = "Mark's Light";
 
-    addType(resourceLight, OIC_TYPE_BINARY_SWITCH);
-    addType(resourceLight, OIC_TYPE_LIGHT_BRIGHTNESS);
+    addType(g_lightResource, OIC_TYPE_BINARY_SWITCH);
+    addType(g_lightResource, OIC_TYPE_LIGHT_BRIGHTNESS);
 
     OCRepPayloadValue powerValue;
     powerValue.b = true;
     powerValue.name = "power";
     powerValue.next = NULL;
     powerValue.type = OCREP_PROP_BOOL;
-    addAttribute(&resourceLight->attribute, &powerValue);
+    addAttribute(&g_lightResource->attribute, &powerValue);
 
     OCRepPayloadValue brightnessValue;
     brightnessValue.i = 255;
     brightnessValue.name = "brightness";
     brightnessValue.next = NULL;
     brightnessValue.type = OCREP_PROP_INT;
-    addAttribute(&resourceLight->attribute, &brightnessValue);
+    addAttribute(&g_lightResource->attribute, &brightnessValue);
 
     //printResource(resourceLight);
 

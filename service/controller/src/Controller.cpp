@@ -56,12 +56,13 @@ namespace OIC { namespace Service
     OCStackResult Controller::start()
     {
         // Start the discoveryManager
-        const std::vector<std::string> types{OIC_DEVICE_LIGHT, OIC_DEVICE_BUTTON, OIC_DEVICE_SENSOR, OIC_DEVICE_FAN, "oic.r.prov"};
+        const std::vector<std::string> types{OIC_DEVICE_LIGHT, OIC_DEVICE_BUTTON, OIC_DEVICE_SENSOR, OIC_DEVICE_FAN, "oic.r.prov"
+                                            , RASPBERRY_PI_DEVICE_CONTROLLER};
         m_discoveryTask = Controller::discoverResource(m_discoveryCallback, types);
 
         // Start the DiscoveryManager for BLE devices
-        m_discoveryManagerBLE.setTimer(TIMER_BLE_DISCOVERY);
-        m_discoveryManagerBLE.discoverResource("", types, m_discoveryCallbackBLE, "", CT_ADAPTER_GATT_BTLE);
+        //m_discoveryManagerBLE.setTimer(TIMER_BLE_DISCOVERY);
+        //m_discoveryManagerBLE.discoverResource("", types, m_discoveryCallbackBLE, "", CT_ADAPTER_GATT_BTLE);
 
         // Start the discovery manager
         return(this->startRD());

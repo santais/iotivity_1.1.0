@@ -5,7 +5,7 @@ if env.get('RELEASE'):
 	env.AppendUnique(CPPDEFINES = ['NDEBUG'])
 else:
 	env.AppendUnique(CCFLAGS = ['-g'])
-	env.AppendUnique(CPPDEFINES = ['DEBUG'])
+	env.AppendUnique(CPPDEFINES = ['YDEBUG'])
 
 lib_env = env.Clone()
 SConscript(env.get('SRC_DIR') + '/service/third_party_libs.scons', 'lib_env')
@@ -48,7 +48,7 @@ if env.get('SECURED') == '1':
 if 'rt' in rpi_env.get('LIBS'):
     rpi_env.Append(LIBS = ['rt'])
 
-rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x'])
+rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x', '-Wno-error'])
 rpi_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
 rpi_env.AppendUnique(LIBS = ['pthread'])
 
@@ -56,7 +56,10 @@ rpi_env.AppendUnique(LIBS = ['pthread'])
 # Source files and Targets
 ####################################################################
 rpi_src = [
-	'src/RPIRCSResourceObject.cpp'	
+	'src/RPIRCSResourceObject.cpp',
+	'src/RPIRCSController.cpp',
+	'src/ConfigurationResource.cpp',
+	'src/MaintenanceResource.cpp'
 	]
 
 Rpi_Static = rpi_env.StaticLibrary('rpi', rpi_src)

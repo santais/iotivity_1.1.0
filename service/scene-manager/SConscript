@@ -50,14 +50,14 @@ scenemanager_env.AppendUnique(CPPPATH = ['../resource-encapsulation/src/common/e
 
 
 scenemanager_env.PrependUnique(LIBS = [
-    'coap',
-    'connectivity_abstraction',
-    'oc_logger',
-    'octbstack',
-    'oc',
     'rcs_client',
     'rcs_server',
-    'rcs_common'
+    'rcs_common',
+    'oc',
+    'octbstack',
+    'oc_logger',
+    'connectivity_abstraction',
+    'libcoap'
     ])
 
 if target_os not in ['windows', 'winrt']:
@@ -101,8 +101,8 @@ scenemanager_env.UserInstallTargetHeader('include/RemoteScene.h', 'service/scene
 scenemanager_env.UserInstallTargetHeader('include/RemoteSceneAction.h', 'service/scene-manager', 'RemoteSceneAction.h')
 
 # Go to build Unit test
-#if target_os == 'linux':
-#    SConscript('unittests/SConscript')
+if target_os == 'linux':
+    SConscript('unittests/SConscript')
 
 # Go to build sample apps
 SConscript('sampleapp/SConscript')

@@ -170,14 +170,19 @@ void ResourceObject::stateChangedCallback(const ResourceState state)
     std::cout << __func__ << std::endl;
 
     // Send the response to the Controller
-    if(m_resourceObjectStateCallback)
+    if(m_resourceObjectStateCallback != nullptr)
     {
     	std::cout << "\n=================================" << std::endl;
     	std::cout << "State changed for device: " << ResourceObject::convertResourceDeviceTypeToString(m_resourceDeviceType) << std::endl;
     	this->printResourceState(state);
-        if(m_resourceObjectStateCallback) {
-	    	m_resourceObjectStateCallback(state, m_resourceObject->getUri(), m_resourceObject->getAddress());
-    	}
+        if(m_resourceObject) {
+            std::cout << "Before resourceobject call" << std::endl;
+            m_resourceObjectStateCallback(state, m_resourceObject->getUri(), m_resourceObject->getAddress());
+        }
+        else
+        {
+            std::cerr << "m_resorceObject is null!" << std::endl;
+        }
     }
     else
     {

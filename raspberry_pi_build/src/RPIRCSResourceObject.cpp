@@ -5,15 +5,33 @@
  * @param resourceTypes         The types associated with the resource
  * @param resourceInterfaces    The interfaces associated with the resource
  */
+RPIRCSResourceObject::RPIRCSResourceObject(const std::string& uri, std::string& resourceType, std::string& resourceInterface)
+{
+#ifdef DEBUG
+    std::cout << __func__ << std::endl;
+#endif
+   // std::cout << "Called rvalue constructor" << std::endl;
+    m_uri = uri;
+    m_resourceTypes.push_back(resourceType);
+    m_resourceInterfaces.push_back(resourceInterface);
+}
+
+/**
+ * @brief RPIRCSResourceObject Set the internal parameters for this specific resource
+ * @param resourceTypes         The types associated with the resource
+ * @param resourceInterfaces    The interfaces associated with the resource
+ */
 RPIRCSResourceObject::RPIRCSResourceObject(const std::string &uri, std::vector<std::string>&& resourceTypes, std::vector<std::string>&& resourceInterfaces)
 {
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
 #endif
+   // std::cout << "Called rvalue constructor" << std::endl;
     m_uri = uri;
     m_resourceTypes = std::move(resourceTypes);
     m_resourceInterfaces = std::move(resourceInterfaces);
 }
+
 
 /**
  * @brief RPIRCSResourceObject Set the internal parameters for this specific resource
@@ -25,6 +43,7 @@ RPIRCSResourceObject::RPIRCSResourceObject(const std::string& uri, const std::ve
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
 #endif
+   // std::cout << "Called lvalue constructor" << std::endl;
     m_uri = uri;
     m_resourceTypes = resourceTypes;
     m_resourceInterfaces = resourceInterfaces;
@@ -34,7 +53,7 @@ RPIRCSResourceObject::RPIRCSResourceObject(const std::string& uri, const std::ve
  */
 RPIRCSResourceObject::~RPIRCSResourceObject()
 {
-
+    // TODO: Destroy smart pointer object
 }
 
 /**
@@ -45,80 +64,35 @@ void RPIRCSResourceObject::createResource(bool discoverable, bool observable, bo
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
 #endif
-    RCSResourceObject::Builder builder = RCSResourceObject::Builder(m_uri, m_resourceTypes[0], m_resourceInterfaces[0])
-            .setDiscoverable(discoverable)
-            .setObservable(observable)
-            .setSecureFlag(secured);
+    try {
+        RCSResourceObject::Builder builder = RCSResourceObject::Builder(m_uri, m_resourceTypes[0], m_resourceInterfaces[0])
+                .setDiscoverable(discoverable)
+                .setObservable(observable)
+                .setSecureFlag(secured);
 
-    std::for_each(m_resourceTypes.begin() + 1, m_resourceTypes.end(),
-                  [&builder](const std::string& typeName) {
-        builder.addType(typeName);
-    });
+        std::for_each(m_resourceTypes.begin() + 1, m_resourceTypes.end(),
+                      [&builder](const std::string& typeName) {
+            builder = builder.addType(typeName);
+            std::cout << "Adding type: " << typeName << std::endl;
+        });
 
-    std::for_each(m_resourceInterfaces.begin() + 1, m_resourceInterfaces.end(),
-                  [&builder](const std::string& interfaceName) {
-        builder.addInterface(interfaceName);
-    });
+        std::for_each(m_resourceInterfaces.begin() + 1, m_resourceInterfaces.end(),
+                      [&builder](const std::string& interfaceName) {
+            builder = builder.addInterface(interfaceName);
+            std::cout << "Adding interface: " << std::endl;
+        });
 
-    m_resource = builder.build();
-}
+        m_resource = builder.build();
 
-/**
- * @brief setRpiOutputType  Set the output type
- * @param type  Type to be set
- * @param port  Port number if type is GPIO
- */
-void RPIRCSResourceObject::setRpiOutputType(RpiIOHandler::RPIOutputType &type, int port)
-{
-#ifdef DEBUG
-    std::cout << __func__ << std::endl;
-#endif
-    m_rpiOutputType = type;
-    if(port == NO_PORT && type == RpiIOHandler::RPIOutputType::GPIO_DIGITAL)
-    {
-        throw RCSException("No port has been assigned to the GPIO");
+        m_resource->setSetRequestHandler(std::bind(&RPIRCSResourceObject::setResponse, this, std::placeholders::_1, std::placeholders::_2));
     }
-    else
+    catch (RCSPlatformException e)
     {
-        switch(type)
-        {
-        case RpiIOHandler::RPIOutputType::AUX:
-
-            break;
-        case RpiIOHandler::RPIOutputType::HDMI:
-
-            break;
-        case RpiIOHandler::RPIOutputType::GPIO_DIGITAL:
-
-            break;
-        case RpiIOHandler::RPIOutputType::VIRTUAL:
-
-            break;
-        default:
-            std::cout << "Unknonw type" << std::endl;
-            break;
-        }
+        std::cout << e.what() << std::endl;
     }
-}
-
-/**
- * @brief setRpiInputType   Set the input type
- * @param type  Type of input. Only GPIO supported
- * @param port  Port number if type is GPIO
- */
-void RPIRCSResourceObject::setRpiInputType(RpiIOHandler::RPIInputType &type, int port)
-{
-#ifdef DEBUG
-    std::cout << __func__ << std::endl;
-#endif
-    m_rpiInputType = type;
-    if(port == NO_PORT && type == RpiIOHandler::RPIInputType::GPIO_DIGITAL)
+    catch (RCSException e)
     {
-        throw RCSException("No port has been assigned to the GPIO");
-    }
-    else
-    {
-
+        std::cout << e.what() << std::endl;
     }
 }
 
@@ -132,13 +106,13 @@ std::vector<std::string> RPIRCSResourceObject::getTypes()
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
 #endif
-    if(m_resource != nullptr)
+    try
     {
         return m_resource->getTypes();
     }
-    else
+    catch (const std::exception& e)
     {
-        throw RCSException("ResourceObject has not been created");
+        std::cout << e.what() << __func__ << std::endl;
     }
 }
 
@@ -152,13 +126,13 @@ std::vector<std::string> RPIRCSResourceObject::getInterfaces()
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
 #endif
-    if(m_resource != nullptr)
+    try
     {
         return m_resource->getInterfaces();
     }
-    else
+    catch (const std::exception& e)
     {
-        throw RCSException("ResourceObject has not been created");
+        std::cout << e.what() << __func__ << std::endl;
     }
 }
 
@@ -171,13 +145,13 @@ void RPIRCSResourceObject::addAttribute(const std::string& name, RCSResourceAttr
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
 #endif
-    if(m_resource != nullptr)
+    try
     {
         m_resource->setAttribute(name, value);
     }
-    else
+    catch (const std::exception& e)
     {
-        throw RCSException("ResourceObject has not beenc created");
+        std::cout << e.what() << __func__ << std::endl;
     }
 }
 
@@ -190,12 +164,76 @@ RCSResourceAttributes RPIRCSResourceObject::getAttributes()
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
 #endif
-    if(m_resource != nullptr)
+    try
     {
         return m_resource->getAttributes();
     }
-    else
+    catch (const std::exception& e)
     {
-        throw RCSException("ResourceObject has not been created");
+        std::cout << e.what() << __func__ << std::endl;
     }
+}
+
+/**
+ * @brief setAttributes
+ *
+ * @param attributes
+ */
+void RPIRCSResourceObject::setAttributes(const RCSResourceAttributes &attributes)
+{
+    for(const auto &attr : attributes) {
+        m_resource->setAttribute(attr.key(), attr.value());
+    }
+}
+
+void RPIRCSResourceObject::setAttributes(RCSResourceAttributes &&attributes)
+{
+    for(const auto &attr : std::move(attributes)) {
+        m_resource->setAttribute(attr.key(), attr.value());
+    }
+}
+
+
+/**
+ * @brief getResourceObject
+ * @return
+ */
+RCSResourceObject::Ptr RPIRCSResourceObject::getResourceObject()
+{
+    return m_resource;
+}
+
+/**
+ * @brief setReqHandler
+ * @param handler
+ */
+void RPIRCSResourceObject::setReqHandler(setRPIRequestHandlerCallback handler)
+{
+#ifdef DEBUG
+    std::cout << __func__ << std::endl;
+#endif
+
+    std::cout << "Setting the application callback" << std::endl;
+    m_applicationCallback = handler;
+
+}
+
+RCSSetResponse RPIRCSResourceObject::setResponse(const RCSRequest& request, RCSResourceAttributes& attributes)
+{
+    std::cout << __func__ << " in RPIRCSResourceObject" << std::endl;
+
+    try
+    {
+        return(m_applicationCallback(request, attributes));
+    }
+    catch (const std::bad_function_call& e)
+    {
+        std::cout << e.what() << "in setResponse" << std::endl;
+    }
+    catch (const std::bad_alloc& e)
+    {
+        std::cout << e.what() << "in setResponse" << std::endl;
+    }
+
+    return RCSSetResponse::defaultAction();
 }

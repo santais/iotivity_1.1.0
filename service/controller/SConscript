@@ -26,10 +26,10 @@
 Import('env')
 
 if env.get('RELEASE'):
-	env.AppendUnique(CCFLAGS = ['-Os'])
-	env.AppendUnique(CPPDEFINES = ['NDEBUG'])
+    env.AppendUnique(CCFLAGS = ['-Os'])
+    env.AppendUnique(CPPDEFINES = ['NDEBUG'])
 else:
-	env.AppendUnique(CCFLAGS = ['-g'])
+    env.AppendUnique(CCFLAGS = ['-g'])
 
 
 lib_env = env.Clone()
@@ -99,6 +99,10 @@ if target_os == 'android':
 
 	if not env.get('RELEASE'):
 		controller_env.AppendUnique(LIBS = ['log'])
+
+if not env.get('RELEASE'):
+    controller_env.PrependUnique(LIBS = ['gcov'])
+    controller_env.AppendUnique(CXXFLAGS = ['--coverage'])
 
 ####################################################################
 # Source files and Targets
