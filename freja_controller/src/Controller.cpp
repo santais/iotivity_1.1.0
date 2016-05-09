@@ -471,6 +471,11 @@ namespace OIC { namespace Service
                 m_sceneStart->addNewSceneAction(resource, "power", true);
                 m_sceneStop->addNewSceneAction(resource, "power", false);
             }
+            else if(type.compare(MP_TYPE_TV_MODE) == 0)
+            {
+                m_sceneStart->addNewSceneAction(resource, "tvMode", "TV_ON");
+                m_sceneStop->addNewSceneAction(resource, "tvMode", "TV_OFF");
+            }
         }
     }
 
