@@ -46,7 +46,7 @@ if env.get('TARGET_ARCH') == 'arm':
 		'libcontroller',		# Has the configuration files
 		'wiringPi'
 		])
-else
+else:
 	rpi_env.AppendUnique(LIBS = [
 		'rcs_client',
 		'rcs_server',
