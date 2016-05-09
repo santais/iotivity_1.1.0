@@ -18,7 +18,7 @@ namespace OIC { namespace Service
         m_resourceObjectStateCallback(std::bind(&Controller::resourceObjectStateCallback, this, std::placeholders::_1,
                                            std::placeholders::_2, std::placeholders::_3))
 	{
-        this->configurePlatform();
+        //this->configurePlatform();
 
         // Set up the scene and the collection
         SceneList::getInstance()->setName("Office");
@@ -65,7 +65,7 @@ namespace OIC { namespace Service
         //m_discoveryManagerBLE.discoverResource("", types, m_discoveryCallbackBLE, "", CT_ADAPTER_GATT_BTLE);
 
         // Start the discovery manager
-        return(this->startRD());
+        return(startRD());
     }
     /**
       * @brief Stop the Controller
@@ -113,7 +113,7 @@ namespace OIC { namespace Service
     void Controller::configurePlatform()
     {
         // Create PlatformConfig object
-        PlatformConfig cfg {
+        /*PlatformConfig cfg {
             OC::ServiceType::InProc,
             OC::ModeType::Both,
             "0.0.0.0", // By setting to "0.0.0.0", it binds to all available interfaces
@@ -121,7 +121,8 @@ namespace OIC { namespace Service
             OC::QualityOfService::HighQos
         };
 
-        OCPlatform::Configure(cfg);
+        OCPlatform::Configure(cfg);*/
+        OCStackResult result = OCInit(NULL, 0, OC_CLIENT_SERVER);
     }
 
     /**
@@ -215,6 +216,12 @@ namespace OIC { namespace Service
       */
     OCStackResult Controller::startRD()
     {
+        OCStackResult result = OCInit(NULL, 0, OC_CLIENT_SERVER);
+
+        if(result != OC_STACK_OK)
+        {
+            std::cout << "Failed to setup platform!" << std::endl;
+        }
         std::cout << "Inside startRD" << std::endl;
         if(!m_RDStarted)
         {
