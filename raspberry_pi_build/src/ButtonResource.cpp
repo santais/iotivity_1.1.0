@@ -4,8 +4,10 @@
 ButtonResource::ButtonResource()
 {
     // Not initialized
-    /*wiringPiSetup();
-    m_inputPortPin = -1;*/
+#ifdef ARM
+    wiringPiSetup();
+    m_inputPortPin = -1;
+#endif
 }
 
 /**
@@ -21,13 +23,16 @@ ButtonResource::ButtonResource(int portPin, const std::string &uri)
     m_inputPortPin = portPin;
 
     // Initialize pins
-   /* wiringPiSetup();
-    pinMode(portPin, OUTPUT);*/
+#ifdef ARM
+    wiringPiSetup();
+    pinMode(portPin, OUTPUT);
+#endif
 }
 
 ButtonResource::~ButtonResource()
 {
     m_resource.reset();
+    //m_buttonInputThread.detach();
 }
 
 ButtonResource::ButtonResource(const ButtonResource& light) :
@@ -63,8 +68,10 @@ ButtonResource& ButtonResource::operator=(ButtonResource&& light)
  */
 void ButtonResource::setInputPortPin(int portPin)
 {
- //   pinMode(portPin, OUTPUT);
+#ifdef ARM
+    pinMode(portPin, OUTPUT);
     m_inputPortPin = portPin;
+#endif
 }
 
 /**
@@ -105,8 +112,15 @@ int ButtonResource::createResource()
     m_resource->setReqHandler(std::bind(&ButtonResource::setRequestHandler, this, std::placeholders::_1,
                                         std::placeholders::_2));
 
+
     // Set the attributes
     this->setAttributes();
+
+    // Start listener thread
+#ifdef ARM
+    std::thread m_buttonInputThread = std::thread(&ButtonResource::readInputThread, this);
+    m_buttonInputThread.join();
+#endif
 
     return 1;
 }
@@ -136,12 +150,16 @@ void ButtonResource::setRequestHandler(const RCSRequest &request, RCSResourceAtt
         if(attrs["state"] == true)
         {
             std::cout << "\t Key: State is set to TRUE" << std::endl;
-            // digitalWrite(m_inputPortPin, HIGH);
+#ifdef ARM
+            digitalRead(m_inputPortPin, HIGH);
+#endif ARM
         }
         else if (attrs["state"] == false)
         {
             std::cout << "\t Key: State is set to FALSE" << std::endl;
-            // digitalWrite(m_inputPortPin, LOW);
+#ifdef ARM
+            digitalRead(m_inputPortPin, LOW);
+#endif
         }
         else
         {
@@ -163,4 +181,34 @@ void ButtonResource::setAttributes()
 {
     RCSResourceAttributes::Value power((bool) false);
     m_resource->addAttribute("state", power);
+}
+
+/**
+ * @brief readInputThread
+ */
+void ButtonResource::readInputThread()
+{
+    std::string state = "state";
+    RCSResourceAttributes::Value value;
+    while(true)
+    {
+#ifdef ARM
+        static bool prevReading = false;
+
+        // Debounce
+        bool newReading = digitalRead(m_inputPortPin);
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        newReading = digitalRead(m_inputPortPin);
+        if(newReading != prevReading)
+        {
+            // Set the new attribute
+            value = RCSResourceAttributes::Value(newReading);
+            m_resource->setAttribute(state, value);
+
+            m_resource->getResourceObject()->notify();
+            prevReading = newReading;
+        }
+#endif
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 }

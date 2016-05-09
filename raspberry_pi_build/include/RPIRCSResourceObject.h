@@ -92,6 +92,14 @@ public:
     RCSResourceAttributes getAttributes();
 
     /**
+     * @brief setAttribute
+     *
+     * @param name
+     * @param value
+     */
+    void setAttribute(std::string& name, RCSResourceAttributes::Value value);
+
+    /**
      * @brief setAttributes
      *
      * @param attributes

@@ -12,6 +12,7 @@ SConscript(env.get('SRC_DIR') + '/service/third_party_libs.scons', 'lib_env')
 rpi_env = lib_env.Clone()
 
 target_os = env.get('TARGET_OS')
+target_arch = env.get('TARGET_ARCH')
 
 ######################################################################
 # Build flags
@@ -27,20 +28,35 @@ rpi_env.AppendUnique(CPPPATH = ['../../service/resource-encapsulation/src/common
 rpi_env.AppendUnique(CPPPATH = ['../../service/resource-directory/include'])
 rpi_env.AppendUnique(CPPPATH = ['../../service/controller/include'])
 
-
-rpi_env.AppendUnique(LIBS = [
-	'rcs_client',
-	'rcs_server',
-	'rcs_common',
-	'oc',
-	'octbstack',
-	'oc_logger',
-	'connectivity_abstraction',
-	'libcoap',
-	'resource_directory',
-	'libcontroller',		# Has the configuration files
-	'librpi'
-	])
+if target_arch in 'ARM':
+	rpi_env.AppendUnique(LIBS = [
+		'rcs_client',
+		'rcs_server',
+		'rcs_common',
+		'oc',
+		'octbstack',
+		'oc_logger',
+		'connectivity_abstraction',
+		'libcoap',
+		'resource_directory',
+		'libcontroller',		# Has the configuration files
+		'librpi',
+		'wiringPi'
+		])
+else:
+	rpi_env.AppendUnique(LIBS = [
+		'rcs_client',
+		'rcs_server',
+		'rcs_common',
+		'oc',
+		'octbstack',
+		'oc_logger',
+		'connectivity_abstraction',
+		'libcoap',
+		'resource_directory',
+		'libcontroller',		# Has the configuration files
+		'librpi'
+		])
 
 #rpi_env.PrependUnique(LIBS = 'resource_directory')
 
@@ -69,6 +85,11 @@ if target_os == 'android':
 
 	if not env.get('RELEASE'):
 		rpi_env.AppendUnique(LIBS = ['log'])
+
+if target_arch == 'arm':
+	rpi_env.AppendUnique(CPPDEFINES = ['ARM'])
+elif target_arch == 'x86_64':
+	rpi_env.AppendUnique(CPPDEFINES = ['x84'])
 
 
 

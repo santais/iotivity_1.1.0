@@ -86,6 +86,7 @@ void RPIRCSResourceObject::createResource(bool discoverable, bool observable, bo
         m_resource = builder.build();
 
         m_resource->setSetRequestHandler(std::bind(&RPIRCSResourceObject::setResponse, this, std::placeholders::_1, std::placeholders::_2));
+        m_resource->setAutoNotifyPolicy(RCSResourceObject::AutoNotifyPolicy::UPDATED);
     }
     catch (RCSPlatformException e)
     {
@@ -177,6 +178,17 @@ RCSResourceAttributes RPIRCSResourceObject::getAttributes()
     {
         std::cout << e.what() << __func__ << std::endl;
     }
+}
+
+/**
+ * @brief setAttribute
+ *
+ * @param name
+ * @param value
+ */
+void RPIRCSResourceObject::setAttribute(std::string& name, RCSResourceAttributes::Value value)
+{
+    m_resource->setAttribute(name, value);
 }
 
 /**

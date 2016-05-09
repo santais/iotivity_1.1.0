@@ -2,7 +2,12 @@
 #define ButtonResource_H_
 
 #include "RPIRCSResourceObject.h"
-//#include "wiringPi.h"
+#include <thread>
+#ifdef ARM
+    #include "wiringPi.h"
+#endif
+
+#include <chrono>
 
 class ButtonResource
 {
@@ -64,6 +69,11 @@ private:
      */
     std::string m_uri;
 
+    /**
+     * @brief m_buttonInputThread
+     */
+    //std::thread m_buttonInputThread;
+
 private:
     /**
      * @brief setRequestHandler
@@ -77,6 +87,11 @@ private:
      * @brief setAttributes
      */
     void setAttributes();
+
+    /**
+     * @brief readInputThread
+     */
+    void readInputThread();
 };
 
 

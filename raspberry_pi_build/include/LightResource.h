@@ -2,7 +2,9 @@
 #define LIGHTRESOURCE_H_
 
 #include "RPIRCSResourceObject.h"
-//#include "wiringPi.h"
+#ifdef ARM
+    #include "wiringPi.h"
+#endif
 
 class LightResource
 {
