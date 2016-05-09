@@ -20,6 +20,8 @@
 
 #include "ocbaseresource.h"
 #include "resource_types.h"
+#include <stdlib.h>
+#include <string>
 
 static const int DELAY_TIME_INPUT_THREAD = 10;      // ms
 
@@ -27,10 +29,20 @@ static const int DELAY_TIME_INPUT_THREAD = 10;      // ms
 static const char LED_PIN = 13;
 static const char TEST_LED_PIN = 5; // PWM Pin
 static const char TEST_BUT_PIN = 2;	
+static const char TEMPERATURE_PIN_IN = A1;
 
+static const float AREF = 3.3;
+static const int ADC_RES = 1024;
+static const float TEMPERATURE_CONSTANT = 10 / ((AREF * 100) / ADC_RES);
+static const int TEMPERATURE_OFFSET = 7;
 
 static int g_prevButtonReading = false;
 #define TAG "ArduinoServer"
+
+// Resources
+OCBaseResourceT* g_lightResource;
+OCBaseResourceT* g_buttonResource;
+OCBaseResourceT* g_temperatureResource;
 
 #ifdef ARDUINOWIFI
 // Arduino WiFi Shield
@@ -45,10 +57,6 @@ static const char INTEL_WIFI_SHIELD_FW_VER[] = "1.2.0";
 /// WiFi network info and credentials
 char ssid[] = "EasySetup123";
 char pass[] = "EasySetup123";
-
-// Resources
-OCBaseResourceT* g_lightResource;
-OCBaseResourceT* g_buttonResource;
 
 int ConnectToNetwork()
 {
@@ -126,6 +134,7 @@ void PrintArduinoMemoryStats()
             ((unsigned int)&tmp - (unsigned int)__brkval));
    // #endif
 }
+
 
 void printAttribute(OCRepPayloadValue *attributes)
 {
@@ -232,36 +241,96 @@ void lightIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResourceHand
     }
 }
 
+
+void temperatureIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResourceHandle handle, bool *underObservation)
+{
+    // Read the ADC value
+    if(port != NULL)
+    {   
+        int reading = analogRead(port->pin);
+        attribute->d = (reading / TEMPERATURE_CONSTANT) - TEMPERATURE_OFFSET;
+    }
+}
+
+void buttonIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResourceHandle handle, bool *underObservation)
+{
+    int reading = digitalRead(port->pin);
+
+    // Debounce
+    if(reading > 0) {
+        delay(50);
+        reading = digitalRead(port->pin);
+    }
+    if(*underObservation && (g_prevButtonReading != reading))
+    {
+        OIC_LOG(DEBUG, TAG, "Notifying observers");
+        attribute->b = reading;
+        Serial.println((int)handle, HEX);
+        if(OCNotifyAllObservers(handle, OC_MEDIUM_QOS) == OC_STACK_NO_OBSERVERS)
+        {
+            OIC_LOG(DEBUG, TAG, "No more observers!");
+            *underObservation = false;
+        }
+        g_prevButtonReading = reading;
+    }
+
+    
+}
+
 void checkInputThread()
 {
-    // Search through the list of resource
+        //OIC_LOG(DEBUG, TAG, "Checking input thread");
+
+    // Search through added resources
     OCBaseResourceT *current = getResourceList();
-    while(current != NULL) 
+
+    while(current != NULL)
     {
         if(current->port->type == INPUT)
         {
-            int reading = digitalRead(current->port->pin);
-
-            // Debounce
-            if(reading > 0) {
-                delay(50);
-                reading = digitalRead(current->port->pin);
-            }
-            if(current->underObservation && (g_prevButtonReading != reading))
-            {
-                OIC_LOG(DEBUG, TAG, "Notifying observers");
-                current->attribute->b = reading;
-                Serial.println((int)current->handle, HEX);
-                if(OCNotifyAllObservers(current->handle, OC_MEDIUM_QOS) == OC_STACK_NO_OBSERVERS)
-                {
-                    OIC_LOG(DEBUG, TAG, "No more observers!");
-                    current->underObservation = false;
-                }
-                g_prevButtonReading = reading;
-            }
+            //OIC_LOG_V(DEBUG, TAG, "Found resource with name: %s", current->name);
+            //OIC_LOG_V(DEBUG, TAG, "checkInputThread Observation: %s", current->underObservation ? "true" : "false");
+            current->OCIOhandler(current->attribute, current->port, current->handle, &current->underObservation);
         }
         current = current->next;
     }
+}
+
+void createTemperature()
+{
+    OCIOPort port;
+    port.pin = TEMPERATURE_PIN_IN;
+    port.type = IN;
+
+    // Temperature resource
+    g_temperatureResource = createResource("/a/temperatureSensor", OIC_DEVICE_SENSOR, OC_RSRVD_INTERFACE_DEFAULT,
+                                                      (OC_DISCOVERABLE | OC_OBSERVABLE), temperatureIOHandler, &port);
+
+    if(g_temperatureResource != NULL)
+    {
+        OIC_LOG(DEBUG, TAG, "Temperature successfully created");
+    }
+    else
+    {
+        OIC_LOG(ERROR, TAG, "Error in creating the temperature sensor");
+        return;
+    }
+
+    g_temperatureResource->name = "LM35 Temperature Sensor";
+
+    OCStackResult result = addType(g_temperatureResource, OIC_TYPE_TEMPERATURE);
+
+    // READ only interface
+    result = addInterface(g_temperatureResource, OC_RSRVD_INTERFACE_READ);
+
+    OCRepPayloadValue value;
+    value.name = "Temperature";
+    value.next = NULL;
+    value.d = 0.0;
+    value.type = OCREP_PROP_DOUBLE;
+    result = addAttribute(&g_temperatureResource->attribute, &value);
+
+    analogReadResolution(10);
 }
 
 //The setup function is called once at startup of the sketch
@@ -337,7 +406,7 @@ void setup()
     buttonPort.type = IN;
 
     g_buttonResource = createResource("/a/button", OIC_DEVICE_BUTTON, OC_RSRVD_INTERFACE_DEFAULT,
-                                            (OC_DISCOVERABLE | OC_OBSERVABLE), NULL, &buttonPort);
+                                            (OC_DISCOVERABLE | OC_OBSERVABLE), buttonIOHandler, &buttonPort);
 
     if(g_buttonResource != NULL)
     {
@@ -364,6 +433,8 @@ void setup()
     buttonValue.next = NULL;
     buttonValue.type = OCREP_PROP_BOOL;
     addAttribute(&g_buttonResource->attribute, &buttonValue);
+
+    createTemperature();
 
     if(OCStartPresence(60 * 60) != OC_STACK_OK)
     {

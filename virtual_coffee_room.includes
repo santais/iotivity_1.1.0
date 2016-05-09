@@ -2120,3 +2120,7 @@ service/things-manager/sdk/inc
 service/things-manager/sdk/java/jni/jniutil/inc
 service/things-manager/sdk/java/jni/tm/inc
 service/things-manager/unittests
+freja_controller
+freja_controller/program
+freja_controller/include
+freja_controller/src

@@ -25,6 +25,16 @@ ResourceObject::ResourceObject(RCSRemoteResourceObject::Ptr remoteResource)
 }
 
 /**
+ * @brief ~ResourceObject     Destructor. Currently not used.
+ */
+ResourceObject::~ResourceObject()
+{
+    m_resourceObject.reset();
+    m_resourceObjectCacheCallback = nullptr;
+    m_resourceObjectStateCallback = nullptr;
+}
+
+/**
  * @brief getAttributes
  * @return The latest cached resources.
  */

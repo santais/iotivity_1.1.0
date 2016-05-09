@@ -63,7 +63,7 @@ else:
 	arduino_simplecs_env.PrependUnique(LIBS = ['octbstack', 'ocsrm', 'connectivity_abstraction', 'coap'])
 
 if ('arduino_due_x' or 'arduino_due_x_dbg') in env.get('BOARD'):
-	arduino_simplecs = arduino_simplecs_env.Program('arduinoLightServer', 'lightServerWiFi.cpp',)
+	arduino_simplecs = arduino_simplecs_env.Program('arduinoLightServer', 'lightServerEthernet.cpp',)
 if 'mega' in env.get('BOARD'):
 	print('MEGA temperature sensor')
 	arduino_simplecs = arduino_simplecs_env.Program('arduinoTemperatureServer', 'temperatureServer.cpp')

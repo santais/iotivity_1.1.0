@@ -486,6 +486,21 @@ namespace OIC { namespace Service
 
                 // Find the resource and remove it from the list
                 ResourceKey resourceKey = uri + address;
+
+                // Find the object
+                std::unordered_map<ResourceKey, ResourceObject::Ptr>::const_iterator object = m_resourceList.find (input);
+                if( object == m_resourceList.end())
+                {
+                    std::cout << "Object not found!" << std::endl;
+                }
+                else
+                {
+                    // Destroy the object
+                    std::cout << "Resetting resource object " << std::endl;
+                    ResourceObject::Ptr resource = got->second;
+                    resource.reset();
+                }
+
                 if(m_resourceList.erase(resourceKey) > 0)
                 {
                     std::cout << "Removed resource: " << uri << std::endl;
