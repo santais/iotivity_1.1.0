@@ -81,15 +81,24 @@ int TVResource::createResource()
     return 1;
 }
 
+/**
+ * @brief TVResource::setUri
+ * @param uri
+ */
 void TVResource::setUri(std::string& uri)
 {
     m_uri = uri;
 }
 
+/**
+ * @brief TVResource::getUri
+ * @return
+ */
 std::string TVResource::getUri()
 {
     return m_uri;
 }
+
 
 /**
  * @brief setRequestHandler
@@ -100,7 +109,7 @@ std::string TVResource::getUri()
 void TVResource::setRequestHandler(const RCSRequest &request, RCSResourceAttributes &attrs)
 {
     // Lookup the power attribute
-    std:cout << "============================================ \n";
+    std::cout << "============================================ \n";
         std::cout << "New attributes are:" << std::endl;
         for(const auto& attr : attrs)
         {

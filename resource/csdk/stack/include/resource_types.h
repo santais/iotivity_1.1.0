@@ -24,6 +24,10 @@
 #ifndef RESOURCE_TYPES_H_
 #define RESOURCE_TYPES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 using namespace std;
 
 //
@@ -36,6 +40,11 @@ const static char* OIC_DEVICE_TV                         = "oic.d.tv";
 const static char* OIC_DEVICE_THERMOSTAT                 = "oic.d.theromstat";
 const static char* OIC_DEVICE_FAN                        = "oic.d.fan";
 // More toc ome...
+
+const static char* RASPBERRY_PI_DEVICE_CONTROLLER       = "raspberry.pi";
+
+// TV Mode demonstration
+const static char* MP_TYPE_TV_MODE                       = "mp.r.tv.mode";
 
 //
 // Light Resource Types
@@ -247,5 +256,8 @@ const static char* OIC_TYPE_ENERGY_USAGE               = "oic.r.energy.usage";
 const static char* OIC_TYPE_ENERGY_CONSUMPTION         = "oic.r.energy.consumption";
 
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RESOURCE_TYPES_H_ */

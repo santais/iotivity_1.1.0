@@ -27,6 +27,10 @@ rpi_env.AppendUnique(CPPPATH = ['../../service/resource-encapsulation/src/common
 rpi_env.AppendUnique(CPPPATH = ['../../service/resource-encapsulation/src/common/expiryTime/include'])
 rpi_env.AppendUnique(CPPPATH = ['../../service/resource-directory/include'])
 rpi_env.AppendUnique(CPPPATH = ['../../service/controller/include'])
+rpi_env.AppendUnique(CPPPATH = ['../../service/resource-directory/include'])
+
+
+	
 
 if target_arch in 'ARM':
 	rpi_env.AppendUnique(LIBS = [
@@ -41,7 +45,8 @@ if target_arch in 'ARM':
 		'resource_directory',
 		'libcontroller',		# Has the configuration files
 		'librpi',
-		'wiringPi'
+		'wiringPi',
+		'resource_directory'
 		])
 else:
 	rpi_env.AppendUnique(LIBS = [
@@ -55,7 +60,8 @@ else:
 		'libcoap',
 		'resource_directory',
 		'libcontroller',		# Has the configuration files
-		'librpi'
+		'librpi',
+		'resource_directory'
 		])
 
 #rpi_env.PrependUnique(LIBS = 'resource_directory')
@@ -71,7 +77,7 @@ if 'rt' in rpi_env.get('LIBS'):
     rpi_env.Append(LIBS = ['rt'])
 
 if target_os not in ['windows', 'winrt']:
-	rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x', '-Wno-error'])
+	rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-Wextra', '-fmessage-length=0', '-std=c++0x', '-Wno-error'])
 
 if target_os not in ['darwin', 'ios', 'windows', 'winrt']:
 	rpi_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
@@ -98,10 +104,12 @@ elif target_arch == 'x86_64':
 ######################################################################
 RpiMain = rpi_env.Program('resource_test', 'resource_test.cpp')
 RpiMain = rpi_env.Program('controller', 'controller.cpp')
-RpiMain = rpi_env.Program('boostrapserver', 'bootstrapserver.cpp')
+RpiMain = rpi_env.Program('BootstrapServer', 'bootstrapserver.cpp')
 
-RpiMain = rpi_env.Program('tvResource', 'tvResource.cpp')
-RpiMain = rpi_env.Program('buttonLightresource', 'ButtonLightResource.cpp')
+RpiMain = rpi_env.Program('TVResource', 'tvResource.cpp')
+RpiMain = rpi_env.Program('ButtonLightResource', 'ButtonLightResource.cpp')
+
+RpiMain = rpi_env.Program('LightResourceHosting', 'LightResourceHosting.cpp')
 
 
 rpi_env.InstallTarget(RpiMain, 'resource_test')
