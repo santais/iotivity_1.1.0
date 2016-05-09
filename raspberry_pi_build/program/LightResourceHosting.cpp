@@ -32,14 +32,23 @@
 
 #include "OCPlatform.h"
 #include "OCApi.h"
+#include "resource_types.h"
+
+#include "ThingsConfiguration.h"
+#include "ThingsMaintenance.h"
+#include "ConfigurationCollection.h"
+#include "MaintenanceCollection.h"
+//#include "FactorySetCollection.h"
 
 using namespace OC;
+using namespace OIC;
 using namespace std;
 namespace PH = std::placeholders;
 
 int gObservation = 0;
 void * ChangeLightRepresentation(void *param);
 void * handleSlowResponse(void *param, std::shared_ptr< OCResourceRequest > pRequest);
+bool gUnderObservation = false;
 
 // Specifies secure or non-secure
 // false: non-secure resource
@@ -49,30 +58,38 @@ bool isSecure = false;
 /// Specifies whether Entity handler is going to do slow response or not
 bool isSlowResponse = false;
 
+// Configuration resource
+static ConfigurationResource* g_configurationResource;
+static ThingsConfiguration* g_thingsConf;
+std::condition_variable g_bootstrapCondition;
+std::mutex g_mutex;
+bool g_bootstrapSet = false;
+typedef std::function< OCRepresentation(void) > getFunc;
+
 // Forward declaring the entityHandler
 
 /// This class represents a single resource named 'lightResource'. This resource has
 /// two simple properties named 'state' and 'power'
 
-class FanResource
+class LightResource
 {
 
 public:
     /// Access this property from a TB client
-    int m_speed;
-    std::string m_fanUri;
+    bool m_power;
+    std::string m_lightUri;
     OCResourceHandle m_resourceHandle;
-    OCRepresentation m_fanRep;
+    OCRepresentation m_lightRep;
 
 public:
     /// Constructor
-    FanResource() :
-            m_speed(10), m_fanUri("/a/fan"), m_resourceHandle(0)
+    LightResource() :
+            m_power(false), m_lightUri("/a/light"), m_resourceHandle(0)
     {
         // Initialize representation
-        m_fanRep.setUri(m_fanUri);
+        m_lightRep.setUri(m_lightUri);
 
-        m_fanRep.setValue("speed", m_speed);
+        m_lightRep.setValue("power", m_power);
     }
 
     /* Note that this does not need to be a member function: for classes you do not have
@@ -81,15 +98,17 @@ public:
     /// This function internally calls registerResource API.
     void createResource()
     {
-        std::string resourceURI = m_fanUri; //URI of the resource
-        std::string resourceTypeName = "oic.d.fan"; //resource type name. In this case, it is light
+        std::string resourceURI = m_lightUri; //URI of the resource
+        std::string resourceTypeName = "oic.d.light"; //resource type name. In this case, it is light
         std::string resourceInterface = DEFAULT_INTERFACE; // resource interface.
 
-        EntityHandler cb = std::bind(&FanResource::entityHandler, this, PH::_1);
+        EntityHandler cb = std::bind(&LightResource::entityHandler, this, PH::_1);
 
         // This will internally create and register the resource.
         OCStackResult result = OCPlatform::registerResource(m_resourceHandle, resourceURI,
                 resourceTypeName, resourceInterface, cb, OC_DISCOVERABLE | OC_OBSERVABLE);
+
+        result = OCPlatform::bindTypeToResource(m_resourceHandle, OIC_TYPE_BINARY_SWITCH);
 
         if (OC_STACK_OK != result)
         {
@@ -121,16 +140,47 @@ public:
     // updates the internal state
     void put(OCRepresentation& rep)
     {
+        std::cout << "Number of attributes: " << rep.numberOfAttributes() << std::endl;
+
+        // Search through the attributes
+        std::unique_ptr<OCRepPayload> payloadPtr(rep.getPayload());
+
+        OCRepPayloadValue* values = payloadPtr->values;
+
+        while(values != NULL)
+        {
+            std::cout << values->name << " value is: ";
+            switch(values->type)
+            {
+                case OCREP_PROP_INT:
+                    std::cout << "INT: " << values->i << std::endl;
+                break;
+                case OCREP_PROP_DOUBLE:
+                    std::cout << "DOUBLE: " << values->d << std::endl;
+                break;
+                case OCREP_PROP_BOOL:
+                    std::cout << "BOOL: " << std::boolalpha <<  values->b << std::endl;
+                break;
+                case OCREP_PROP_STRING:
+                    std::cout << "STRING: " << values->str << std::endl;
+                break;
+
+            }
+            values = values->next;
+        }
+
         try
         {
-            if (rep.getValue("speed", m_speed))
+            if (rep.getValue("power", m_power))
             {
-                cout << "\t\t\t\t" << "speed: " << m_speed << endl;
+                cout << "\t\t\t\t" << "power: " << std::boolalpha << m_power << endl;
             }
             else
             {
-                cout << "\t\t\t\t" << "speed not found in the representation" << endl;
+                cout << "\t\t\t\t" << "power not found in the representation" << endl;
             }
+
+            OCPlatform::notifyAllObservers(m_resourceHandle);
         }
         catch (exception& e)
         {
@@ -154,9 +204,9 @@ public:
     // sending out.
     OCRepresentation get()
     {
-        m_fanRep.setValue("speed", m_speed);
+        m_lightRep.setValue("power", m_power);
 
-        return m_fanRep;
+        return m_lightRep;
     }
 
     void addType(const std::string& type) const
@@ -182,7 +232,7 @@ private:
 // Entity handler can be implemented in several ways by the manufacturer
     OCEntityHandlerResult entityHandler(std::shared_ptr< OCResourceRequest > request)
     {
-        cout << "\tIn Server CPP entity handler:\n";
+        //cout << "\tIn Server CPP entity handler:\n";
         OCEntityHandlerResult ehResult = OC_EH_ERROR;
         if (request)
         {
@@ -192,7 +242,7 @@ private:
 
             if (requestFlag & RequestHandlerFlag::RequestFlag)
             {
-                cout << "\t\trequestFlag : Request\n";
+                //cout << "\t\trequestFlag : Request\n";
                 auto pResponse = std::make_shared< OC::OCResourceResponse >();
                 pResponse->setRequestHandle(request->getRequestHandle());
                 pResponse->setResourceHandle(request->getResourceHandle());
@@ -200,7 +250,7 @@ private:
                 // If the request type is GET
                 if (requestType == "GET")
                 {
-                    cout << "\t\t\trequestType : GET\n";
+                    //cout << "\t\t\trequestType : GET\n";
                     if (isSlowResponse) // Slow response case
                     {
                         static int startedThread = 0;
@@ -225,7 +275,7 @@ private:
                 }
                 else if (requestType == "PUT")
                 {
-                    cout << "\t\t\trequestType : PUT\n";
+                    //cout << "\t\t\trequestType : PUT\n";
                     OCRepresentation rep = request->getResourceRepresentation();
 
                     // Do related operations related to PUT request
@@ -241,7 +291,7 @@ private:
                 }
                 else if (requestType == "POST")
                 {
-                    cout << "\t\t\trequestType : POST\n";
+                    //cout << "\t\t\trequestType : POST\n";
 
                     OCRepresentation rep = request->getResourceRepresentation();
 
@@ -265,6 +315,20 @@ private:
                 {
                     // DELETE request operations
                 }
+                if (requestFlag & RequestHandlerFlag::ObserverFlag)
+                {
+                    ObservationInfo observationInfo = request->getObservationInfo();
+                    if(ObserveAction::ObserveRegister == observationInfo.action)
+                    {
+                        cout << "\t\trequestFlag : Register Observer\n";
+                        gUnderObservation = true;
+                    }
+                    else if(ObserveAction::ObserveUnregister == observationInfo.action)
+                    {
+                        gUnderObservation = false;
+                        cout << "\t\trequestFlag : Degister Observer\n";
+                    }
+                }
             }
         }
         else
@@ -279,7 +343,7 @@ private:
 void * handleSlowResponse(void *param, std::shared_ptr< OCResourceRequest > pRequest)
 {
     // This function handles slow response case
-    FanResource* fanPtr = (FanResource*) param;
+    LightResource* lightPtr = (LightResource*) param;
     // Induce a case for slow response by using sleep
     std::cout << "SLOW response" << std::endl;
     sleep(10);
@@ -287,7 +351,7 @@ void * handleSlowResponse(void *param, std::shared_ptr< OCResourceRequest > pReq
     auto pResponse = std::make_shared< OC::OCResourceResponse >();
     pResponse->setRequestHandle(pRequest->getRequestHandle());
     pResponse->setResourceHandle(pRequest->getResourceHandle());
-    pResponse->setResourceRepresentation(fanPtr->get());
+    pResponse->setResourceRepresentation(lightPtr->get());
     pResponse->setErrorCode(200);
     pResponse->setResponseResult(OC_EH_OK);
 
@@ -297,11 +361,170 @@ void * handleSlowResponse(void *param, std::shared_ptr< OCResourceRequest > pReq
     return NULL;
 }
 
+// callback handler on GET request
+void onBootstrap(const HeaderOptions& /*headerOptions*/, const OCRepresentation& rep, const int eCode)
+{
+    std::cout << __func__ << std::endl;
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_bootstrapSet = true;
+
+    if (eCode == OC_STACK_ERROR)
+    {
+        std::cout << "onGET Response error: " << eCode << std::endl;
+        g_bootstrapCondition.notify_all();
+        return ;
+    }
+
+    std::cout << "\n\nGET request was successful" << std::endl;
+    std::cout << "\tResource URI: " << rep.getUri() << std::endl;
+/*
+    std::string defaultDeviceName = rep.getValue< std::string >("n");
+    std::string defaultLocation = rep.getValue< std::string >("loc");
+    std::string defaultLocationName = rep.getValue< std::string >("locn");
+    std::string defaultRegion = rep.getValue< std::string >("r");
+    std::string defaultCurrency = rep.getValue< std::string >("c");
+
+    std::cout << "\tDeviceName : " << defaultDeviceName << std::endl;
+    std::cout << "\tLocation : " << defaultLocation << std::endl;
+    std::cout << "\tLocationName : " << defaultLocationName << std::endl;
+    std::cout << "\tCurrency : " << defaultCurrency << std::endl;
+    std::cout << "\tRegion : " << defaultRegion << std::endl;
+*/
+    // Set the configuration resource
+    OCRepresentation newRep = rep;
+    g_configurationResource->setConfigurationRepresentation(newRep);
+
+    g_bootstrapCondition.notify_all();
+
+}
+
+getFunc getGetFunction(std::string uri)
+{
+    getFunc res = NULL;
+
+    if (uri == g_configurationResource->getUri())
+    {
+        res = std::bind(&ConfigurationResource::getConfigurationRepresentation,
+                g_configurationResource);
+    }
+    /*
+    else if (uri == myMaintenanceResource->getUri())
+    {
+        res = std::bind(&MaintenanceResource::getMaintenanceRepresentation,
+                myMaintenanceResource);
+    }*/
+
+    return res;
+}
+
+OCStackResult sendResponseForResource(std::shared_ptr< OCResourceRequest > pRequest)
+{
+    auto pResponse = std::make_shared< OC::OCResourceResponse >();
+
+    // Check for query params (if any)
+    QueryParamsMap queryParamsMap = pRequest->getQueryParameters();
+
+    pResponse->setRequestHandle(pRequest->getRequestHandle());
+    pResponse->setResourceHandle(pRequest->getResourceHandle());
+
+    getFunc getFunction;
+    getFunction = getGetFunction(pRequest->getResourceUri());
+
+    OCRepresentation rep;
+    rep = getFunction();
+
+    auto findRes = queryParamsMap.find("if");
+
+    if (findRes != queryParamsMap.end())
+    {
+        pResponse->setResourceRepresentation(rep, findRes->second);
+    }
+    else
+    {
+        pResponse->setResourceRepresentation(rep, DEFAULT_INTERFACE);
+    }
+
+    pResponse->setErrorCode(200);
+    pResponse->setResponseResult(OC_EH_OK);
+
+    return OCPlatform::sendResponse(pResponse);
+}
+
+// This function prepares a response for any incoming request to Light resource.
+bool prepareResponseForResource(std::shared_ptr< OCResourceRequest > request)
+{
+    std::cout << "\tIn Server CPP prepareResponseForResource:\n";
+    bool result = false;
+    if (request)
+    {
+        // Get the request type and request flag
+        std::string requestType = request->getRequestType();
+        int requestFlag = request->getRequestHandlerFlag();
+
+        if (requestFlag == RequestHandlerFlag::RequestFlag)
+        {
+            std::cout << "\t\trequestFlag : Request\n";
+
+            // If the request type is GET
+            if (requestType == "GET")
+            {
+                std::cout << "\t\t\trequestType : GET\n";
+                // GET operations are directly handled while sending the response
+                // in the sendLightResponse function
+                result = true;
+            }
+            else if (requestType == "POST")
+            {
+                // POST request operations
+            }
+            else if (requestType == "DELETE")
+            {
+                // DELETE request operations
+            }
+        }
+        else if (requestFlag == RequestHandlerFlag::ObserverFlag)
+        {
+            std::cout << "\t\trequestFlag : Observer\n";
+        }
+    }
+    else
+    {
+        std::cout << "Request invalid" << std::endl;
+    }
+
+    return result;
+}
+
+OCEntityHandlerResult entityHandlerConfiguration(std::shared_ptr< OCResourceRequest > request)
+{
+    std::cout << "\tIn Server CPP (entityHandlerForResource) entity handler:\n";
+    OCEntityHandlerResult ehResult = OC_EH_ERROR;
+
+    QueryParamsMap test = request->getQueryParameters();
+
+    if (prepareResponseForResource(request))
+    {
+        if (OC_STACK_OK == sendResponseForResource(request))
+        {
+            ehResult = OC_EH_OK;
+        }
+        else
+        {
+            std::cout << "sendResponse failed." << std::endl;
+        }
+    }
+    else
+    {
+        std::cout << "PrepareResponse failed." << std::endl;
+    }
+    return ehResult;
+}
+
 int main()
 {
     // Create PlatformConfig object
     PlatformConfig cfg
-    { OC::ServiceType::InProc, OC::ModeType::Server, "0.0.0.0",
+    { OC::ServiceType::InProc, OC::ModeType::Both, "0.0.0.0",
     // By setting to "0.0.0.0", it binds to all available interfaces
             0,// Uses randomly available port
             OC::QualityOfService::LowQos };
@@ -311,10 +534,26 @@ int main()
     {
         // Create the instance of the resource class
         // (in this case instance of class 'LightResource').
-        FanResource myFan;
+        LightResource myLight;
 
         // Invoke createResource function of class light.
-        myFan.createResource();
+        myLight.createResource();
+
+        // Create the configuration resource
+        g_configurationResource = new ConfigurationResource();
+        g_configurationResource->createResources(&entityHandlerConfiguration);
+        g_thingsConf = new ThingsConfiguration();
+
+        // Set the bootstrap server
+        if( g_thingsConf->doBootstrap(&onBootstrap) == OC_STACK_OK)
+        {
+            // Hold the condition
+            std::cout << "Waiting for boostrap server" << std::endl;
+            std::unique_lock<std::mutex> lock(g_mutex);
+            g_bootstrapCondition.wait_for(lock, std::chrono::milliseconds(30000), [](){return g_bootstrapSet;});
+        }
+
+        std::cout << "Boostrap server has been found" << std::endl;
 
         while(OCProcess() == OC_STACK_OK)
         {
@@ -331,3 +570,4 @@ int main()
 
     return 0;
 }
+
