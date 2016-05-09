@@ -32,34 +32,102 @@ OCResourceHandle g_curResource_l = NULL;
 char rdAddress[MAX_ADDR_STR_SIZE];
 uint16_t rdPort;
 
+bool waitRdDiscovery = false;
+
+OCEntityHandlerResult entityHandlerCb(std::shared_ptr<OCResourceRequest> request)
+{
+    std::cout << "Inside eneityHandlerCb" << std::endl;
+
+    OCEntityHandlerResult ehResult = OC_EH_ERROR;
+
+    if(request)
+    {
+        std::cout << "Request for uri: " << request->getResourceUri() << std::endl;
+        std::string requestType = request->getRequestType();
+        int requestFlag = request->getRequestHandlerFlag();
+
+        if(requestFlag & RequestHandlerFlag::RequestFlag)
+        {
+            std::cout << "\t\trequestFlag : Request\n";
+            auto pResponse = std::make_shared<OC::OCResourceResponse>();
+            pResponse->setRequestHandle(request->getRequestHandle());
+            pResponse->setResourceHandle(request->getResourceHandle());
+
+            // Check for query params (if any)
+            QueryParamsMap queries = request->getQueryParameters();
+
+            if (!queries.empty())
+            {
+                std::cout << "\nQuery processing upto entityHandler" << std::endl;
+            }
+            for (auto it : queries)
+            {
+                std::cout << "Query key: " << it.first << " value : " << it.second
+                        << std:: endl;
+            }
+
+            OCRepresentation rep;
+            std::string name("Mark's Light");
+            rep.setValue("state", true);
+            rep.setValue("power", (int)100);
+            rep.setValue("name", name);
+
+
+            // If the request type is GET
+            if(requestType == "GET")
+            {
+                /*if(!initialized)
+                {
+                    OCStackResult res = OCPlatform::bindTypeToResource(request->getResourceHandle(),
+                                                        "oic.r.light.dimming");
+                    if(res != OC_STACK_OK)
+                    {
+                        std::cout << "Error binding type" << std::endl;
+                    }
+                }*/
+
+            }
+
+            if(requestType == "POST")
+            {
+                std::cout << "RequestType is POST" << std::endl;
+
+            }
+
+            if(requestType == "PUT")
+            {
+                std::cout << "requestType is PUT" << std::endl;
+            }
+
+            pResponse->setErrorCode(200);
+            pResponse->setResponseResult(OC_EH_OK);
+            pResponse->setResourceRepresentation(rep);
+            if(OC_STACK_OK == OCPlatform::sendResponse(pResponse))
+            {
+                ehResult = OC_EH_OK;
+            }
+        }
+    }
+    return ehResult;
+}
+
+
 void registerLocalResources()
 {
-    std::string resourceURI_thermostat = "/a/thermostat";
-    std::string resourceTypeName_thermostat = "core.thermostat";
     std::string resourceURI_light = "/a/light";
-    std::string resourceTypeName_light = "core.light";
+    std::string resourceTypeName_light = "oic.d.light";
     std::string resourceInterface = DEFAULT_INTERFACE;
-    uint8_t resourceProperty = OC_DISCOVERABLE;
+    uint8_t resourceProperty = OC_DISCOVERABLE | OC_OBSERVABLE;
 
-    OCStackResult result = OCPlatform::registerResource(g_curResource_t,
-                           resourceURI_thermostat,
-                           resourceTypeName_thermostat,
-                           resourceInterface,
-                           NULL,
-                           resourceProperty);
+    EntityHandler cb = std::bind(&entityHandlerCb, std::placeholders::_1);
 
-    if (OC_STACK_OK != result)
-    {
-        throw std::runtime_error(
-            std::string("Device Resource failed to start") + std::to_string(result));
-    }
-
-    result = OCPlatform::registerResource(g_curResource_l,
+    OCStackResult result = OCPlatform::registerResource(g_curResource_l,
                                           resourceURI_light,
                                           resourceTypeName_light,
                                           resourceInterface,
-                                          NULL,
+                                          cb,
                                           resourceProperty);
+
 
     if (OC_STACK_OK != result)
     {
@@ -86,6 +154,7 @@ int biasFactorCB(char addr[MAX_ADDR_STR_SIZE], uint16_t port)
     OICStrcpy(rdAddress, MAX_ADDR_STR_SIZE, addr);
     rdPort = port;
     std::cout << "RD Address is : " <<  addr << ":" << port << std::endl;
+    waitRdDiscovery = true;
     return 0;
 }
 
@@ -111,39 +180,31 @@ int main()
     {
         sleep(2);
 
-        if (g_curResource_t == NULL || g_curResource_l == NULL)
+        if (g_curResource_l == NULL)
         {
-            continue;
-        }
-        printHelp();
-
-        in = 0;
-        std::cin >> in;
-
-        if (std::cin.fail())
-        {
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "Invalid input type, please try again" << std::endl;
+            std::cout << "Fail\n";
             continue;
         }
 
+        std::cout << "Trying to discover " << std::endl;
         try
         {
-            switch ((int)in)
+            OCRDDiscover(biasFactorCB);
+            while(!waitRdDiscovery)
             {
-                case 1:
-                    OCRDDiscover(biasFactorCB);
-                    break;
-                case 2:
-                    OCRDPublish(rdAddress, rdPort, 2, g_curResource_t, g_curResource_l);
-                    break;
-                case 3:
-                    break;
-                default:
-                    std::cout << "Invalid input, please try again" << std::endl;
-                    break;
+                std::cout << "Retrying.." << std::endl;
+                OCRDDiscover(biasFactorCB);
+                sleep(1);
             }
+
+            std::cout << "Found RD!" << std::endl;
+
+            while(OCProcess() == OC_STACK_OK)
+            {
+                sleep(0.1);
+            }
+            return 0;
+
         }
         catch (OCException e)
         {

@@ -39,6 +39,8 @@ static OCStackResult sendRequest(OCMethod method, char *uri, OCDevAddr *addr,
     OCDoHandle handle;
     OCStackResult result;
 
+    printf("Inside sendRequest");
+
     result = OCDoResource(&handle,
         method,
         uri,
@@ -141,11 +143,13 @@ static OCStackApplicationResult handleDiscoverCB(void *ctx,
 
 OCStackResult OCRDDiscover(OCRDBiasFactorCB cbBiasFactor)
 {
+
     if (!cbBiasFactor)
     {
         OIC_LOG(DEBUG, TAG, "No callback function specified.");
         return OC_STACK_INVALID_CALLBACK;
     }
+
 
     /* Start a discovery query*/
     char queryUri[MAX_URI_LENGTH] = { '\0' };
