@@ -44,7 +44,7 @@ static OCStackResult sendRequest(OCMethod method, char *uri, OCDevAddr *addr,
         uri,
         addr,
         payload,
-        CT_DEFAULT,
+        CT_ADAPTER_IP,
         OC_LOW_QOS,
         &cbData,
         NULL,
@@ -56,7 +56,6 @@ static OCStackResult sendRequest(OCMethod method, char *uri, OCDevAddr *addr,
     }
     else
     {
-        printf("Resource Directory send failed...\n");
         OIC_LOG(ERROR, TAG, "Resource Directory send failed...");
     }
 
@@ -142,13 +141,11 @@ static OCStackApplicationResult handleDiscoverCB(void *ctx,
 
 OCStackResult OCRDDiscover(OCRDBiasFactorCB cbBiasFactor)
 {
-
     if (!cbBiasFactor)
     {
         OIC_LOG(DEBUG, TAG, "No callback function specified.");
         return OC_STACK_INVALID_CALLBACK;
     }
-
 
     /* Start a discovery query*/
     char queryUri[MAX_URI_LENGTH] = { '\0' };
