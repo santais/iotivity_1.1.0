@@ -16,9 +16,7 @@
 using namespace OIC;
 using namespace OIC::Service;
 
-typedef std::function<RCSSetResponse(const RCSRequest&, RCSResourceAttributes&)> setRequestHandlerCallback;
-typedef std::function<RCSSetResponse(const RCSRequest&, RCSResourceAttributes&)> setRPIRequestHandlerCallback;
-
+typedef std::function<void(const RCSRequest&, RCSResourceAttributes&)> setRPIRequestHandlerCallback;
 
 class RPIRCSResourceObject
 {
@@ -41,7 +39,7 @@ public:
      * @param resourceTypes         The types associated with the resource
      * @param resourceInterfaces    The interfaces associated with the resource
      */
-    RPIRCSResourceObject(const std::string& uri, std::string& resourceType, std::string& resourceInterface);
+    RPIRCSResourceObject(const std::string& uri, const std::string& resourceType, const std::string& resourceInterface);
 
     /**
      * @brief RPIRCSResourceObject Set the internal parameters for this specific resource

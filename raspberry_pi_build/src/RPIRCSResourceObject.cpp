@@ -5,7 +5,7 @@
  * @param resourceTypes         The types associated with the resource
  * @param resourceInterfaces    The interfaces associated with the resource
  */
-RPIRCSResourceObject::RPIRCSResourceObject(const std::string& uri, std::string& resourceType, std::string& resourceInterface)
+RPIRCSResourceObject::RPIRCSResourceObject(const std::string& uri, const std::string& resourceType, const std::string& resourceInterface)
 {
 #ifdef DEBUG
     std::cout << __func__ << std::endl;
@@ -65,6 +65,7 @@ void RPIRCSResourceObject::createResource(bool discoverable, bool observable, bo
     std::cout << __func__ << std::endl;
 #endif
     try {
+        std::cout << "uri: " << m_uri << std::endl;
         RCSResourceObject::Builder builder = RCSResourceObject::Builder(m_uri, m_resourceTypes[0], m_resourceInterfaces[0])
                 .setDiscoverable(discoverable)
                 .setObservable(observable)
@@ -93,6 +94,10 @@ void RPIRCSResourceObject::createResource(bool discoverable, bool observable, bo
     catch (RCSException e)
     {
         std::cout << e.what() << std::endl;
+    }
+    catch (RCSInvalidParameterException e)
+    {
+        std::cout << "Invalid param: " << e.what() << std::endl;
     }
 }
 
@@ -224,7 +229,7 @@ RCSSetResponse RPIRCSResourceObject::setResponse(const RCSRequest& request, RCSR
 
     try
     {
-        return(m_applicationCallback(request, attributes));
+        m_applicationCallback(request, attributes);
     }
     catch (const std::bad_function_call& e)
     {

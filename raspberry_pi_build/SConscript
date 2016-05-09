@@ -59,7 +59,10 @@ rpi_src = [
 	'src/RPIRCSResourceObject.cpp',
 	'src/RPIRCSController.cpp',
 	'src/ConfigurationResource.cpp',
-	'src/MaintenanceResource.cpp'
+	'src/MaintenanceResource.cpp',
+	'src/LightResource.cpp',
+	'src/ButtonResource.cpp',
+	'src/TVResource.cpp'
 	]
 
 Rpi_Static = rpi_env.StaticLibrary('rpi', rpi_src)
