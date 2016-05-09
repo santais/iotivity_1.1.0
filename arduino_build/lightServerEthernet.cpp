@@ -303,7 +303,7 @@ void createTemperature()
     port.type = IN;
 
     // Temperature resource
-    g_temperatureResource = createResource("/a/temperatureSensor", OIC_DEVICE_SENSOR, OC_RSRVD_INTERFACE_DEFAULT,
+    g_temperatureResource = createResource("/arduino/temperatureSensor", OIC_DEVICE_SENSOR, OC_RSRVD_INTERFACE_DEFAULT,
                                                       (OC_DISCOVERABLE | OC_OBSERVABLE), temperatureIOHandler, &port);
 
     if(g_temperatureResource != NULL)
@@ -368,7 +368,7 @@ void setup()
     portLight.type = OUT;
 
     // Light resource
-    g_lightResource = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
+    g_lightResource = createResource("/arduino/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
                                               (OC_DISCOVERABLE | OC_OBSERVABLE), lightIOHandler, &portLight);
     
     if(g_lightResource != NULL)
@@ -405,7 +405,7 @@ void setup()
     buttonPort.pin = TEST_BUT_PIN;
     buttonPort.type = IN;
 
-    g_buttonResource = createResource("/a/button", OIC_DEVICE_BUTTON, OC_RSRVD_INTERFACE_DEFAULT,
+    g_buttonResource = createResource("/arduino/button", OIC_DEVICE_BUTTON, OC_RSRVD_INTERFACE_DEFAULT,
                                             (OC_DISCOVERABLE | OC_OBSERVABLE), buttonIOHandler, &buttonPort);
 
     if(g_buttonResource != NULL)
@@ -436,7 +436,7 @@ void setup()
 
     createTemperature();
 
-    if(OCStartPresence(60 * 60) != OC_STACK_OK)
+    if(OCStartPresence(OC_MAX_PRESENCE_TTL_SECONDS - 1) != OC_STACK_OK)
     {
         OIC_LOG(ERROR, TAG, "Unable to start presence server");
     }
