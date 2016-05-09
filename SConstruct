@@ -85,5 +85,6 @@ if target_os == 'arduino':
 
 if target_os == 'linux':
 	# Build the RPI API
-	SConscript(build_dir + 'raspberry_pi_build/SConscript')
+	SConscript(build_dir + 'freja_controller/SConscript')
+#	SConscript(build_dir + 'raspberry_pi_build/SConscript')
 
