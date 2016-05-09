@@ -56,8 +56,8 @@ build_dir = env.get('BUILD_DIR')
 # Build 'resource' sub-project
 SConscript(build_dir + 'resource/SConscript')
 
-#if target_os not in ['arduino','darwin','ios', 'android']:
-#	SConscript(build_dir + 'examples/OICMiddle/SConscript')
+if target_os not in ['arduino','darwin','ios', 'android']:
+	SConscript(build_dir + 'examples/OICMiddle/SConscript')
 
 # Build 'service' sub-project
 SConscript(build_dir + 'service/SConscript')
@@ -66,7 +66,7 @@ SConscript(build_dir + 'service/SConscript')
 SConscript(build_dir + 'plugins/SConscript')
 
 # Build "cloud" sub-project
-#SConscript(build_dir + 'cloud/SConscript')
+SConscript(build_dir + 'cloud/SConscript')
 
 # Append targets information to the help information, to see help info, execute command line:
 #     $ scon [options] -h
@@ -82,4 +82,8 @@ env.UserInstallTargetPCFile('iotivity.pc', 'iotivity.pc')
 if target_os == 'arduino':
 	# Build the Arduino API
 	SConscript(build_dir + 'arduino_build/SConscript')
+
+if target_os == 'linux':
+	# Build the RPI API
+	SConscript(build_dir + 'raspberry_pi_build/SConscript')
 
