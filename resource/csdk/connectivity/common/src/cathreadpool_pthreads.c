@@ -109,7 +109,10 @@ CAResult_t ca_thread_pool_init(int32_t num_of_threads, ca_thread_pool_t *thread_
     if(!(*thread_pool)->details->list_lock)
     {
         OIC_LOG(ERROR, TAG, "Failed to create thread-pool mutex");
-        goto exit;
+        OICFree((*thread_pool)->details);
+        OICFree(*thread_pool);
+        *thread_pool = NULL;
+        return CA_STATUS_FAILED;
     }
 
     (*thread_pool)->details->threads_list = u_arraylist_create();
@@ -121,17 +124,15 @@ CAResult_t ca_thread_pool_init(int32_t num_of_threads, ca_thread_pool_t *thread_
         {
             OIC_LOG(ERROR, TAG, "Failed to free thread-pool mutex");
         }
-        goto exit;
+
+        OICFree((*thread_pool)->details);
+        OICFree(*thread_pool);
+        *thread_pool = NULL;
+        return CA_STATUS_FAILED;
     }
 
     OIC_LOG(DEBUG, TAG, "OUT");
     return CA_STATUS_OK;
-
-exit:
-    OICFree((*thread_pool)->details);
-    OICFree(*thread_pool);
-    *thread_pool = NULL;
-    return CA_STATUS_FAILED;
 }
 
 CAResult_t ca_thread_pool_add_task(ca_thread_pool_t thread_pool, ca_thread_func method,

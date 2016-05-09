@@ -50,7 +50,7 @@ extern "C"
  */
 CAResult_t CAInitializeIP(CARegisterConnectivityCallback registerCallback,
                           CANetworkPacketReceivedCallback networkPacketCallback,
-                          CAAdapterChangeCallback netCallback,
+                          CANetworkChangeCallback netCallback,
                           CAErrorHandleCallback errorCallback, ca_thread_pool_t handle);
 
 /**

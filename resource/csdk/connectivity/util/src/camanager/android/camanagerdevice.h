@@ -35,8 +35,8 @@ extern "C"
  */
 typedef struct
 {
-    jstring address;         /**< remote address */
-    bool isAutoConnecting;   /**< whether GATT connection has been in progress */
+    jstring address;      /**< remote address */
+    bool isAutoConnect;   /**< auto connection flag */
 } CAManagerACData_t;
 
 /**
@@ -49,13 +49,9 @@ jstring CAManagerGetLEAddressFromACData(JNIEnv *env, size_t idx);
 
 /**
  * create auto connection list.
+ * @param[in]   env                   JNI interface pointer.
  */
-void CAManagerCreateACDataList();
-
-/**
- * Destroy auto connection list.
- */
-void CAManagerDestroyACDataList();
+void CAManagerCreateACDataList(JNIEnv *env);
 
 /**
  * initialize mutex.
@@ -69,11 +65,11 @@ CAResult_t CAManagerInitMutexVaraibles();
 void CAManagerTerminateMutexVariables();
 
 /**
- * check whether target address is already contained in ACData list or not.
+ * check whether target address is already contained in list or not.
  * @param[in]   env                   JNI interface pointer.
  * @param[in]   jaddress              ble address.
  */
-bool CAManagerIsInACDataList(JNIEnv *env, jstring jaddress);
+bool CAManagerIsMatchedACData(JNIEnv *env, jstring jaddress);
 
 /**
  * add auto connection data into list.
@@ -83,37 +79,35 @@ bool CAManagerIsInACDataList(JNIEnv *env, jstring jaddress);
 void CAManagerAddACData(JNIEnv *env, jstring jaddress);
 
 /**
- * remove auto connection data from ACData list for selected ble address.
+ * remove auto connection data for selected ble address.
  * @param[in]   env                   JNI interface pointer.
  * @param[in]   jaddress              ble address.
  * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
  */
-CAResult_t CAManagerRemoveACData(JNIEnv *env, jstring jaddress);
+CAResult_t CAManagerRemoveData(JNIEnv *env, jstring jaddress);
 
 /**
- * remove auto connection data from ACData list for all devices.
+ * remove auto connection data for all devices.
  * @param[in]   env                   JNI interface pointer.
  * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
  */
-CAResult_t CAManagerRemoveAllACData(JNIEnv *env);
+CAResult_t CAManagerRemoveAllData(JNIEnv *env);
 
 /**
- * get isAutoConnecting flag for the address.
+ * get current auto connection flag.
  * @param[in]   env                   JNI interface pointer.
  * @param[in]   jaddress              ble address.
- * @param[out]  flag                  isAutoConnecting flag
- * @return  ::CA_STATUS_OK or ERROR CODES (::CAResult_t error codes in cacommon.h).
- */
-CAResult_t CAManagerGetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool *flag);
-
-/**
- * set isAutoConnecting flag for the address.
- * @param[in]   env                   JNI interface pointer.
- * @param[in]   jaddress              ble address.
- * @param[in]   flag                  isAutoConnecting flag.
  * @return  true or false
  */
-bool CAManagerSetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool flag);
+bool CAManagerGetAutoConnectionFlag(JNIEnv *env, jstring jaddress);
+
+/**
+ * set auto connection flag.
+ * @param[in]   env                   JNI interface pointer.
+ * @param[in]   jaddress              ble address.
+ * @param[in]   flag                  auto connection flag.
+ */
+void CAManagerSetAutoConnectionFlag(JNIEnv *env, jstring jaddress, bool flag);
 
 /**
  * get length of auto connection list.

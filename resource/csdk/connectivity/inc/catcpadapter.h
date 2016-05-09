@@ -54,9 +54,7 @@ typedef struct
  * @param[in] networkPacketCallback Callback to notify request and
  *                                  response messages from server(s)
  *                                  started at Connectivity Abstraction Layer.
- * @param[in] netCallback           Callback to notify the adapter changes
- *                                  to Connectivity Abstraction Layer.
- * @param[in] connCallback          Callback to notify the connection changes
+ * @param[in] netCallback           Callback to notify the network additions
  *                                  to Connectivity Abstraction Layer.
  * @param[in] errorCallback         Callback to notify the network errors to
  *                                  Connectivity Abstraction Layer.
@@ -65,8 +63,7 @@ typedef struct
  */
 CAResult_t CAInitializeTCP(CARegisterConnectivityCallback registerCallback,
                            CANetworkPacketReceivedCallback networkPacketCallback,
-                           CAAdapterChangeCallback netCallback,
-                           CAConnectionChangeCallback connCallback,
+                           CANetworkChangeCallback netCallback,
                            CAErrorHandleCallback errorCallback, ca_thread_pool_t handle);
 
 /**
@@ -155,11 +152,13 @@ CAResult_t CAStopTCP();
 void CATerminateTCP();
 
 /**
- * Set connection status changes callback to process KeepAlive.
+ * Set connected callback and disconnected callback to process KeepAlive.
  * connection informations are delivered these callbacks.
- * @param[in]   ConnHandler     Connection status changes callback.
+ * @param[in]   ConnHandler     Connected callback.
+ * @param[in]   DisconnHandler  Disconnected Callback.
  */
-void CATCPSetKeepAliveCallbacks(CAKeepAliveConnectionCallback ConnHandler);
+void CATCPSetKeepAliveCallbacks(CAKeepAliveConnectedCallback ConnHandler,
+                                CAKeepAliveDisconnectedCallback DisconnHandler);
 
 #ifdef __cplusplus
 } /* extern "C" */

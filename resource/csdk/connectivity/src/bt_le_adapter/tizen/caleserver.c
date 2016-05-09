@@ -114,6 +114,13 @@ static ca_thread_pool_t g_leServerThreadPool = NULL;
  */
 static GMainLoop *g_eventLoop = NULL;
 
+static CALEConnectionStateChangedCallback g_connStateCb = NULL;
+
+void CASetLEConnectionStateChangedCallback(CALEConnectionStateChangedCallback connStateCb)
+{
+    g_connStateCb = connStateCb;
+}
+
 void CALEGattServerConnectionStateChanged(bool connected, const char *remoteAddress)
 {
     VERIFY_NON_NULL_VOID(remoteAddress, TAG, "remote address");
@@ -121,10 +128,18 @@ void CALEGattServerConnectionStateChanged(bool connected, const char *remoteAddr
     if (connected)
     {
         OIC_LOG_V(DEBUG, TAG, "Connected to [%s]", remoteAddress);
+        if (g_connStateCb)
+        {
+            g_connStateCb(CA_ADAPTER_GATT_BTLE, remoteAddress, true);
+        }
     }
     else
     {
         OIC_LOG_V(DEBUG, TAG, "Disconnected from [%s]", remoteAddress);
+        if (g_connStateCb)
+        {
+            g_connStateCb(CA_ADAPTER_GATT_BTLE, remoteAddress, false);
+        }
     }
 }
 
@@ -192,19 +207,10 @@ CAResult_t CALEStartAdvertise(const char *serviceUUID)
         return CA_STATUS_FAILED;
     }
 
-    res = bt_adapter_le_set_advertising_device_name(g_hAdvertiser,
-                                                    BT_ADAPTER_LE_PACKET_SCAN_RESPONSE, true);
+    res = bt_adapter_le_start_advertising(g_hAdvertiser, NULL, NULL, NULL);
     if (BT_ERROR_NONE != res)
     {
-        OIC_LOG_V(ERROR, TAG, "bt_adapter_le_set_advertising_device_name failed with ret[%s]",
-                  CALEGetErrorMsg(res));
-        return CA_STATUS_FAILED;
-    }
-
-    res = bt_adapter_le_start_advertising_new(g_hAdvertiser, NULL, NULL);
-    if (BT_ERROR_NONE != res)
-    {
-        OIC_LOG_V(ERROR, TAG, "bt_adapter_le_start_advertising_new failed with ret[%s]",
+        OIC_LOG_V(ERROR, TAG, "bt_adapter_le_start_advertising failed with ret[%s]",
                   CALEGetErrorMsg(res));
         return CA_STATUS_FAILED;
     }
@@ -686,7 +692,7 @@ CAResult_t CAAddNewCharacteristicsToGattServer(const bt_gatt_h svcPath, const ch
     OIC_LOG(DEBUG, TAG, "IN");
 
     int permissions = BT_GATT_PERMISSION_READ | BT_GATT_PERMISSION_WRITE;
-    int properties;
+    int properties = BT_GATT_PROPERTY_WRITE | BT_GATT_PROPERTY_NOTIFY;
     if(read)
     {
         properties = BT_GATT_PROPERTY_NOTIFY | BT_GATT_PROPERTY_READ;
@@ -739,9 +745,8 @@ CAResult_t CAAddNewCharacteristicsToGattServer(const bt_gatt_h svcPath, const ch
         char desc_value[2] = {1, 0};  // Notification enabled.
         bt_gatt_h descriptor = NULL;
         permissions = BT_GATT_PERMISSION_READ | BT_GATT_PERMISSION_WRITE;
-        ret = bt_gatt_descriptor_create(CA_GATT_CONFIGURATION_DESC_UUID, permissions,
-                                        desc_value, sizeof(desc_value),
-                                        &descriptor);
+        ret = bt_gatt_descriptor_create(CA_GATT_CONFIGURATION_DESC_UUID,
+                                        permissions, desc_value, sizeof(desc_value), &descriptor);
         if (0 != ret)
         {
             OIC_LOG_V(ERROR, TAG,

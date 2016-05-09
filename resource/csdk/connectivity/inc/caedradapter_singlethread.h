@@ -55,7 +55,7 @@ extern "C"
  */
 CAResult_t CAInitializeEDR(CARegisterConnectivityCallback registerCallback,
                            CANetworkPacketReceivedCallback reqRespCallback,
-                           CAAdapterChangeCallback netCallback);
+                           CANetworkChangeCallback netCallback);
 
 /**
  * @brief  Starting EDR connectivity adapters. As its peer to peer it doesnot require to start

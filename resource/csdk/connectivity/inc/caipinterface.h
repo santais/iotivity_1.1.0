@@ -187,30 +187,6 @@ typedef struct
     uint32_t ipv4addr;        /**< used for IPv4 only. */
 } CAInterface_t;
 
-
-/**
- * Callback to be notified when IP adapter connection state changes.
- *
- * @param[in]  adapter      Transport adapter.
- * @param[in]  status       Connection status either ::CA_INTERFACE_UP or ::CA_INTERFACE_DOWN.
- * @see CAIPSetConnectionStateChangeCallback() for registration.
- */
-typedef void (*CAIPConnectionStateChangeCallback)(CATransportAdapter_t adapter, CANetworkStatus_t status);
-
-/**
- * Set callback for receiving local IP adapter connection status.
- *
- * @param[in]  adapter      Callback to be notified when IP adapter connection state changes.
- */
-void CAIPSetConnectionStateChangeCallback(CAIPConnectionStateChangeCallback callback);
-
-/**
- * Set callback for receiving local IP adapter connection status.
- *
- * @param[in]  callback     Callback to be notified when IP adapter connection state changes.
- */
-void CAIPSetNetworkMonitorCallback(CAIPConnectionStateChangeCallback callback);
-
 /**
  * Get a list of CAInterface_t items.
  *
@@ -219,14 +195,14 @@ void CAIPSetNetworkMonitorCallback(CAIPConnectionStateChangeCallback callback);
 u_arraylist_t *CAIPGetInterfaceInformation(int desiredIndex);
 
 /**
- * Find a new network interface.
+ * @brief   Find a new network interface.
  *
  * @return  Description of interface (or NULL if no change)
  */
 CAInterface_t *CAFindInterfaceChange();
 
 /**
- * Let the network monitor update the polling interval.
+ * @brief   Let the network monitor update the polling interval.
  * @param   [in] current polling interval
  *
  * @return  desired polling interval
@@ -234,7 +210,7 @@ CAInterface_t *CAFindInterfaceChange();
 int CAGetPollingInterval(int interval);
 
 /**
- * Tell the IP server an interface has been added.
+ * @brief   Tell the IP server an interface has been added.
  */
 void CAWakeUpForChange();
 
@@ -253,7 +229,7 @@ CAResult_t CAIPStartNetworkMonitor();
 CAResult_t CAIPStopNetworkMonitor();
 
 /**
- * Set callback for error handling.
+ * @brief  Set callback for error handling.
  *
  * @param[in]  ipErrorCallback  callback to notify error to the ipadapter.
  */

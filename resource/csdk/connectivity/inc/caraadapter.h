@@ -51,7 +51,7 @@ extern "C"
  */
 CAResult_t CAInitializeRA(CARegisterConnectivityCallback registerCallback,
                           CANetworkPacketReceivedCallback networkPacketCallback,
-                          CAAdapterChangeCallback netCallback,
+                          CANetworkChangeCallback netCallback,
                           ca_thread_pool_t handle);
 
 

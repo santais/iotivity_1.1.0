@@ -36,15 +36,6 @@ extern "C"
 #endif
 
 /**
- * EDR Socket Information for EDR transport
- */
-typedef struct
-{
-    jobject deviceSocket;   /**< Bluetooth device socket info */
-    jobject inputStream;    /**< InputStream for read data */
-} CAEDRSocketInfo_t;
-
-/**
  * Get address from device socket.
  * @param[in]   env                 JNI interface pointer.
  * @param[in]   bluetoothSocketObj  bluetooth socket object.
@@ -179,10 +170,10 @@ void CAEDRNativeRemoveDeviceSocketBaseAddr(JNIEnv *env, jstring address);
 
 /**
  * Get device socket object from the list.
- * @param[in]  index            index of device list.
+ * @param[in]  idx              index of device list.
  * @return Device socket object or NULL.
  */
-jobject CAEDRNativeGetDeviceSocket(uint32_t index);
+jobject CAEDRNativeGetDeviceSocket(uint32_t idx);
 
 /**
  * Get device socket address.
@@ -191,13 +182,6 @@ jobject CAEDRNativeGetDeviceSocket(uint32_t index);
  * @return  Device socket object or NULL.
  */
 jobject CAEDRNativeGetDeviceSocketBaseAddr(JNIEnv *env, const char* remoteAddress);
-
-/**
- * Get input stream object from the list.
- * @param[in]   index           index of device list.
- * @return Input stream object or NULL.
- */
-jobject CAEDRNativeGetInputStream(uint32_t index);
 
 /**
  * Get length of device socket list.

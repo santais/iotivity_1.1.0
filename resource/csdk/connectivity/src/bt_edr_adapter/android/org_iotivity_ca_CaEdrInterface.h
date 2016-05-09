@@ -39,20 +39,11 @@ Java_org_iotivity_ca_CaEdrInterface_caEdrStateChangedCallback
 /*
  * Class:     org_iotivity_ca_CaEdrInterface
  * Method:    caEdrBondStateChangedCallback
- * Signature: (java/lang/String)V
+ * Signature: (I)V
  */
 JNIEXPORT void JNICALL
 Java_org_iotivity_ca_CaEdrInterface_caEdrBondStateChangedCallback
 (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     org_iotivity_ca_CaEdrInterface
- * Method:    caEdrConnectionStateChangedCallback
- * Signature: (java/lang/String;I)V
- */
-JNIEXPORT void JNICALL
-Java_org_iotivity_ca_CaEdrInterface_caEdrConnectionStateChangedCallback
-(JNIEnv *, jobject, jstring, jint);
 
 #ifdef __cplusplus
 }

@@ -70,6 +70,11 @@ void ca_mutex_lock(ca_mutex mutex)
     return;
 }
 
+bool ca_mutex_trylock(ca_mutex mutex)
+{
+    return true;
+}
+
 void ca_mutex_unlock(ca_mutex mutex)
 {
     return;

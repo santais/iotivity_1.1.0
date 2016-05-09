@@ -36,7 +36,8 @@ static bool g_isBTRecovery = false;
 
 jstring CAManagerGetLEAddressFromACData(JNIEnv *env, size_t idx)
 {
-    OIC_LOG_V(DEBUG, TAG, "CAManagerGetLEAddressFromACData (idx : %d)", idx);
+    OIC_LOG(DEBUG, TAG, "CAManagerGetLEAddressFromACData");
+    OIC_LOG_V(DEBUG, TAG, "idx : %d", idx);
     if (idx <= u_arraylist_length(g_deviceACDataList))
     {
         CAManagerACData_t *curData = (CAManagerACData_t *) u_arraylist_get(
@@ -53,37 +54,28 @@ jstring CAManagerGetLEAddressFromACData(JNIEnv *env, size_t idx)
             OIC_LOG(ERROR, TAG, "address is null");
             return NULL;
         }
-        OIC_LOG_V(INFO, TAG, "found target address : %s", address);
+        OIC_LOG_V(INFO, TAG, "found out target address : %s", address);
         (*env)->ReleaseStringUTFChars(env, curData->address, address);
 
         return curData->address;
     }
-    OIC_LOG(DEBUG, TAG, "idx is greater than the length of ACDataList");
     return NULL;
 }
 
-void CAManagerCreateACDataList()
+void CAManagerCreateACDataList(JNIEnv *env)
 {
     OIC_LOG(DEBUG, TAG, "CAManagerCreateACDataList");
+    VERIFY_NON_NULL_VOID(env, TAG, "env");
 
     ca_mutex_lock(g_deviceACDataListMutex);
-    if (NULL == g_deviceACDataList)
+    // create new object array
+    if (g_deviceACDataList == NULL)
     {
         OIC_LOG(DEBUG, TAG, "Create AC Data list");
+
         g_deviceACDataList = u_arraylist_create();
     }
     ca_mutex_unlock(g_deviceACDataListMutex);
-}
-
-void CAManagerDestroyACDataList()
-{
-    OIC_LOG(DEBUG, TAG, "CAManagerDestroyACDataList");
-    if (g_deviceACDataList)
-    {
-        OIC_LOG(DEBUG, TAG, "Destroy AC Data list");
-        u_arraylist_free(&g_deviceACDataList);
-        g_deviceACDataList = NULL;
-    }
 }
 
 CAResult_t CAManagerInitMutexVaraibles()
@@ -111,10 +103,10 @@ void CAManagerTerminateMutexVariables()
 
 static CAManagerACData_t *CAManagerCreateACData(jstring jaddress)
 {
-    OIC_LOG(DEBUG, TAG, "IN - CAManagerCreateACData");
+    OIC_LOG(DEBUG, TAG, "IN-CAManagerCreateACData");
     VERIFY_NON_NULL_RET(jaddress, TAG, "jaddress", NULL);
 
-    // create AC data
+    // create block data
     CAManagerACData_t *data = (CAManagerACData_t *) OICCalloc(1, sizeof(*data));
     if (!data)
     {
@@ -123,24 +115,21 @@ static CAManagerACData_t *CAManagerCreateACData(jstring jaddress)
     }
 
     data->address = jaddress;
-    data->isAutoConnecting = false;
+    data->isAutoConnect = false;
 
-    OIC_LOG(DEBUG, TAG, "OUT - CAManagerCreateACData");
+    OIC_LOG(DEBUG, TAG, "OUT-CAManagerCreateACData");
     return data;
 }
 
-bool CAManagerIsInACDataList(JNIEnv *env, jstring jaddress)
+bool CAManagerIsMatchedACData(JNIEnv *env, jstring jaddress)
 {
     VERIFY_NON_NULL_RET(env, TAG, "env", NULL);
     VERIFY_NON_NULL_RET(jaddress, TAG, "jaddress", false);
-
-    ca_mutex_lock(g_deviceACDataListMutex);
 
     const char* address = (*env)->GetStringUTFChars(env, jaddress, NULL);
     if (!address)
     {
         OIC_LOG(ERROR, TAG, "address is null");
-        ca_mutex_unlock(g_deviceACDataListMutex);
         return false;
     }
 
@@ -153,7 +142,6 @@ bool CAManagerIsInACDataList(JNIEnv *env, jstring jaddress)
         {
             OIC_LOG(ERROR, TAG, "curData is null");
             (*env)->ReleaseStringUTFChars(env, jaddress, address);
-            ca_mutex_unlock(g_deviceACDataListMutex);
             return false;
         }
 
@@ -162,7 +150,6 @@ bool CAManagerIsInACDataList(JNIEnv *env, jstring jaddress)
         {
             OIC_LOG(ERROR, TAG, "address is null");
             (*env)->ReleaseStringUTFChars(env, jaddress, address);
-            ca_mutex_unlock(g_deviceACDataListMutex);
             return false;
         }
 
@@ -170,49 +157,41 @@ bool CAManagerIsInACDataList(JNIEnv *env, jstring jaddress)
         {
             (*env)->ReleaseStringUTFChars(env, curData->address, setAddress);
             (*env)->ReleaseStringUTFChars(env, jaddress, address);
-            ca_mutex_unlock(g_deviceACDataListMutex);
             return true;
         }
         (*env)->ReleaseStringUTFChars(env, curData->address, setAddress);
     }
-
-    OIC_LOG_V(DEBUG, TAG, "[%s] doesn't exist in list", address);
     (*env)->ReleaseStringUTFChars(env, jaddress, address);
-    ca_mutex_unlock(g_deviceACDataListMutex);
 
     return false;
 }
 
 void CAManagerAddACData(JNIEnv *env, jstring jaddress)
 {
-    OIC_LOG(DEBUG, TAG, "IN - CAManagerAddACData");
+    OIC_LOG(DEBUG, TAG, "IN-CAManagerAddACData");
 
     VERIFY_NON_NULL_VOID(env, TAG, "env");
     VERIFY_NON_NULL_VOID(jaddress, TAG, "jaddress");
 
-    if(!CAManagerIsInACDataList(env, jaddress))
+    ca_mutex_lock(g_deviceACDataListMutex);
+
+    if(!CAManagerIsMatchedACData(env, jaddress))
     {
-        OIC_LOG(DEBUG, TAG, "new ACdata will be added in List");
+        OIC_LOG(DEBUG, TAG, "ACdata will be added");
         // add CAManagerACData
         jobject gaddress = (*env)->NewGlobalRef(env, jaddress);
 
         CAManagerACData_t *data = CAManagerCreateACData(gaddress);
-
-        ca_mutex_lock(g_deviceACDataListMutex);
         u_arraylist_add(g_deviceACDataList, data);
-        ca_mutex_unlock(g_deviceACDataListMutex);
     }
-    else
-    {
-        OIC_LOG(DEBUG, TAG, "the address is already in ACData list");
-    }
+    ca_mutex_unlock(g_deviceACDataListMutex);
 
-    OIC_LOG(DEBUG, TAG, "OUT - CAManagerAddACData");
+    OIC_LOG(DEBUG, TAG, "OUT-CAManagerAddACData");
 }
 
-CAResult_t CAManagerRemoveACData(JNIEnv *env, jstring jaddress)
+CAResult_t CAManagerRemoveData(JNIEnv *env, jstring jaddress)
 {
-    OIC_LOG(DEBUG, TAG, "CAManagerRemoveACData");
+    OIC_LOG(DEBUG, TAG, "IN-CAManagerRemoveData");
     VERIFY_NON_NULL(env, TAG, "env");
     VERIFY_NON_NULL(jaddress, TAG, "jaddress");
 
@@ -226,7 +205,7 @@ CAResult_t CAManagerRemoveACData(JNIEnv *env, jstring jaddress)
         return CA_STATUS_FAILED;
     }
 
-    OIC_LOG_V(DEBUG, TAG, "[%s] will be removed", address);
+    OIC_LOG_V(DEBUG, TAG, "(%s) will be removed", address);
 
     size_t length = u_arraylist_length(g_deviceACDataList);
     for (size_t idx = 0; idx < length; idx++)
@@ -277,16 +256,15 @@ CAResult_t CAManagerRemoveACData(JNIEnv *env, jstring jaddress)
         (*env)->ReleaseStringUTFChars(env, curData->address, setAddress);
     }
 
-    OIC_LOG_V(DEBUG, TAG, "[%s] doesn't exist in list", address);
     (*env)->ReleaseStringUTFChars(env, jaddress, address);
     ca_mutex_unlock(g_deviceACDataListMutex);
-
+    OIC_LOG(DEBUG, TAG, "OUT-CAManagerRemoveData");
     return CA_STATUS_OK;
 }
 
-CAResult_t CAManagerRemoveAllACData(JNIEnv *env)
+CAResult_t CAManagerRemoveAllData(JNIEnv *env)
 {
-    OIC_LOG(DEBUG, TAG, "IN - CAManagerRemoveAllACData");
+    OIC_LOG(DEBUG, TAG, "IN-CAManagerRemoveAllData");
     VERIFY_NON_NULL(env, TAG, "env");
 
     ca_mutex_lock(g_deviceACDataListMutex);
@@ -318,15 +296,15 @@ CAResult_t CAManagerRemoveAllACData(JNIEnv *env)
         OICFree(curData);
     }
     ca_mutex_unlock(g_deviceACDataListMutex);
-    OIC_LOG(DEBUG, TAG, "OUT - CAManagerRemoveAllACData");
+    OIC_LOG(DEBUG, TAG, "OUT-CAManagerRemoveAllData");
     return CA_STATUS_OK;
 }
 
-CAResult_t CAManagerGetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool *flag)
+bool CAManagerGetAutoConnectionFlag(JNIEnv *env, jstring jaddress)
 {
-    OIC_LOG(DEBUG, TAG, "CAManagerGetAutoConnectingFlag");
-    VERIFY_NON_NULL(env, TAG, "env");
-    VERIFY_NON_NULL(jaddress, TAG, "jaddress");
+    OIC_LOG(DEBUG, TAG, "IN-CAManagerGetAutoConnectionFlag");
+    VERIFY_NON_NULL_RET(env, TAG, "env", NULL);
+    VERIFY_NON_NULL_RET(jaddress, TAG, "jaddress", NULL);
 
     ca_mutex_lock(g_deviceACDataListMutex);
 
@@ -362,29 +340,26 @@ CAResult_t CAManagerGetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool *f
 
         if (!strcmp(setAddress, address))
         {
-            OIC_LOG_V(DEBUG, TAG, "address : [%s], isAutoConnecting : %d", address,
-                      curData->isAutoConnecting);
-            *flag = curData->isAutoConnecting;
             (*env)->ReleaseStringUTFChars(env, curData->address, setAddress);
             (*env)->ReleaseStringUTFChars(env, jaddress, address);
             ca_mutex_unlock(g_deviceACDataListMutex);
-            return CA_STATUS_OK;
+            OIC_LOG_V(DEBUG, TAG, "flag is %d", curData->isAutoConnect);
+            return curData->isAutoConnect;
         }
         (*env)->ReleaseStringUTFChars(env, curData->address, setAddress);
     }
-
-    OIC_LOG_V(DEBUG, TAG, "[%s] doesn't exist in list", address);
     (*env)->ReleaseStringUTFChars(env, jaddress, address);
     ca_mutex_unlock(g_deviceACDataListMutex);
 
-    return CA_STATUS_FAILED;
+    OIC_LOG(DEBUG, TAG, "OUT-CAManagerGetAutoConnectionFlag");
+    return false;
 }
 
-bool CAManagerSetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool flag)
+void CAManagerSetAutoConnectionFlag(JNIEnv *env, jstring jaddress, bool flag)
 {
-    OIC_LOG(DEBUG, TAG, "CAManagerSetAutoConnectingFlag");
-    VERIFY_NON_NULL_RET(env, TAG, "env", false);
-    VERIFY_NON_NULL_RET(jaddress, TAG, "jaddress", false);
+    OIC_LOG(DEBUG, TAG, "IN-CAManagerSetAutoConnectionFlag");
+    VERIFY_NON_NULL_VOID(env, TAG, "env");
+    VERIFY_NON_NULL_VOID(jaddress, TAG, "jaddress");
 
     ca_mutex_lock(g_deviceACDataListMutex);
 
@@ -393,7 +368,7 @@ bool CAManagerSetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool flag)
     {
         OIC_LOG(ERROR, TAG, "address is null");
         ca_mutex_unlock(g_deviceACDataListMutex);
-        return false;
+        return;
     }
 
     size_t length = u_arraylist_length(g_deviceACDataList);
@@ -406,7 +381,7 @@ bool CAManagerSetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool flag)
             OIC_LOG(ERROR, TAG, "curData is null");
             (*env)->ReleaseStringUTFChars(env, jaddress, address);
             ca_mutex_unlock(g_deviceACDataListMutex);
-            return false;
+            return;
         }
 
         const char* setAddress = (*env)->GetStringUTFChars(env, curData->address, NULL);
@@ -415,27 +390,24 @@ bool CAManagerSetAutoConnectingFlag(JNIEnv *env, jstring jaddress, bool flag)
             OIC_LOG(ERROR, TAG, "address is null");
             (*env)->ReleaseStringUTFChars(env, jaddress, address);
             ca_mutex_unlock(g_deviceACDataListMutex);
-            return false;
+            return;
         }
 
         if (!strcmp(setAddress, address))
         {
-            OIC_LOG_V(DEBUG, TAG, "isAutoConnecting flag of [%s] is set to %d", address,
-                      curData->isAutoConnecting);
-            curData->isAutoConnecting = flag;
+            OIC_LOG_V(DEBUG, TAG, "flag is set to %d", flag);
+            curData->isAutoConnect = flag;
             (*env)->ReleaseStringUTFChars(env, curData->address, setAddress);
             (*env)->ReleaseStringUTFChars(env, jaddress, address);
             ca_mutex_unlock(g_deviceACDataListMutex);
-            return true;
+            return;
         }
         (*env)->ReleaseStringUTFChars(env, curData->address, setAddress);
     }
-
-    OIC_LOG_V(DEBUG, TAG, "[%s] doesn't exist in list", address);
     (*env)->ReleaseStringUTFChars(env, jaddress, address);
     ca_mutex_unlock(g_deviceACDataListMutex);
 
-    return false;
+    OIC_LOG(DEBUG, TAG, "OUT-CAManagerSetAutoConnectionFlag");
 }
 
 size_t CAManagerGetACDataLength()
@@ -446,7 +418,7 @@ size_t CAManagerGetACDataLength()
 void CAManagerSetBTRecovery(bool flag)
 {
     g_isBTRecovery = flag;
-    OIC_LOG_V(DEBUG, TAG, "BT recovery flag is set to %d", g_isBTRecovery);
+    OIC_LOG_V(DEBUG, TAG, "BT recovery flag : %d", g_isBTRecovery);
 }
 
 bool CAManagerIsRecoveryFlagSet()

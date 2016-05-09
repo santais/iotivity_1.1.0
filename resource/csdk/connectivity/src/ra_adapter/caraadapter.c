@@ -59,7 +59,7 @@ static CANetworkPacketReceivedCallback g_networkPacketCallback = NULL;
 /**
  * Network Changed Callback to CA.
  */
-static CAAdapterChangeCallback g_networkChangeCallback = NULL;
+static CANetworkChangeCallback g_networkChangeCallback = NULL;
 
 /**
  * Holds XMPP data information.
@@ -91,15 +91,25 @@ void CARANotifyNetworkChange(const char *address, CANetworkStatus_t status)
 
     g_xmppData.connectionStatus = status;
 
-    CAAdapterChangeCallback networkChangeCallback = g_networkChangeCallback;
+    CAEndpoint_t *localEndpoint = CACreateEndpointObject(CA_DEFAULT_FLAGS,
+                                CA_ADAPTER_REMOTE_ACCESS,
+                                address, 0);
+    if (!localEndpoint)
+    {
+        OIC_LOG(ERROR, RA_ADAPTER_TAG, "localEndpoint creation failed!");
+        return;
+    }
+    CANetworkChangeCallback networkChangeCallback = g_networkChangeCallback;
     if (networkChangeCallback)
     {
-        networkChangeCallback(CA_ADAPTER_REMOTE_ACCESS, status);
+        networkChangeCallback(localEndpoint, status);
     }
     else
     {
         OIC_LOG(ERROR, RA_ADAPTER_TAG, "g_networkChangeCallback is NULL");
     }
+
+    CAFreeEndpoint(localEndpoint);
 
     OIC_LOG(DEBUG, RA_ADAPTER_TAG, "CARANotifyNetworkChange OUT");
 }
@@ -349,8 +359,8 @@ static int CARAConnHandler(xmpp_t *xmpp, xmppconn_info_t *conninfo, void *udata)
 }
 
 CAResult_t CAInitializeRA(CARegisterConnectivityCallback registerCallback,
-                          CANetworkPacketReceivedCallback networkPacketCallback,
-                          CAAdapterChangeCallback netCallback, ca_thread_pool_t handle)
+                                CANetworkPacketReceivedCallback networkPacketCallback,
+                                CANetworkChangeCallback netCallback, ca_thread_pool_t handle)
 {
     OIC_LOG(DEBUG, RA_ADAPTER_TAG, "CAInitializeRA IN");
     if (!registerCallback || !networkPacketCallback || !netCallback || !handle)
@@ -605,7 +615,7 @@ static CANetworkPacketReceivedCallback g_networkPacketCallback = NULL;
 /**
  * Network Changed Callback to CA.
  */
-static CAAdapterChangeCallback g_networkChangeCallback = NULL;
+static CANetworkChangeCallback g_networkChangeCallback = NULL;
 
 /**
  * Holds XMPP data information.
@@ -647,15 +657,25 @@ void CARANotifyNetworkChange(const char *address, CANetworkStatus_t status)
 {
     OIC_LOG(DEBUG, RA_ADAPTER_TAG, "CARANotifyNetworkChange IN");
 
-    CAAdapterChangeCallback networkChangeCallback = g_networkChangeCallback;
+    CAEndpoint_t *localEndpoint = CACreateEndpointObject(CA_DEFAULT_FLAGS,
+                                CA_ADAPTER_REMOTE_ACCESS,
+                                address, 0);
+    if (!localEndpoint)
+    {
+        OIC_LOG(ERROR, RA_ADAPTER_TAG, "localEndpoint creation failed!");
+        return;
+    }
+    CANetworkChangeCallback networkChangeCallback = g_networkChangeCallback;
     if (networkChangeCallback)
     {
-        networkChangeCallback(CA_ADAPTER_REMOTE_ACCESS, status);
+        networkChangeCallback(localEndpoint, status);
     }
     else
     {
         OIC_LOG(ERROR, RA_ADAPTER_TAG, "g_networkChangeCallback is NULL");
     }
+
+    CAFreeEndpoint(localEndpoint);
 
     OIC_LOG(DEBUG, RA_ADAPTER_TAG, "CARANotifyNetworkChange OUT");
 }
@@ -763,8 +783,8 @@ void CARAXmppMessageReceivedCB(void * const param, xmpp_error_code_t result,
 }
 
 CAResult_t CAInitializeRA(CARegisterConnectivityCallback registerCallback,
-                          CANetworkPacketReceivedCallback networkPacketCallback,
-                          CAAdapterChangeCallback netCallback, ca_thread_pool_t handle)
+                                CANetworkPacketReceivedCallback networkPacketCallback,
+                                CANetworkChangeCallback netCallback, ca_thread_pool_t handle)
 {
     OIC_LOG(DEBUG, RA_ADAPTER_TAG, "CAInitializeRA IN");
     if (!registerCallback || !networkPacketCallback || !netCallback || !handle)

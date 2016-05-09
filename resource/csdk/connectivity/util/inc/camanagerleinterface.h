@@ -48,7 +48,18 @@ CAResult_t CASetLEClientAutoConnectionDeviceInfo();
  */
 CAResult_t CAUnsetLEClientAutoConnectionDeviceInfo();
 
-#if defined(__ANDROID__) && defined(LE_ADAPTER)
+/**
+ * Start advertise to receive request for scanning or connecting.
+ */
+void CAStartServerLEAdvertising();
+
+/**
+ * Stop advertise to destroy advertiser.
+ */
+void CAStopServerLEAdvertising();
+
+#ifdef __ANDROID__
+#ifdef LE_ADAPTER
 /**
  * initialize client connection manager
  * @param[in]   env                   JNI interface pointer.
@@ -66,6 +77,7 @@ CAResult_t CAManagerLEClientInitialize(JNIEnv *env, JavaVM *jvm, jobject context
  * @return  ::CA_STATUS_OK or ::CA_STATUS_FAILED or ::CA_MEMORY_ALLOC_FAILED
  */
 CAResult_t CAManagerLEClientTerminate(JNIEnv *env);
+#endif
 #endif
 
 #ifdef __cplusplus

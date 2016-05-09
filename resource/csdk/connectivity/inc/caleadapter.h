@@ -40,9 +40,7 @@ extern "C"
  * @param[in]  reqRespCallback  Callback to notify request and response
  *                              messages from server(s) started at
  *                              Connectivity Abstraction Layer.
- * @param[in]  netCallback      Callback to notify the adapter changes
- *                              to Connectivity Abstraction Layer.
- * @param[in]  connCallback     Callback to notify the connection changes
+ * @param[in]  netCallback      Callback to notify the network additions
  *                              to Connectivity Abstraction Layer.
  * @param[in]  errorCallback    errorCallback to notify error to
  *                              connectivity common logic layer from adapter.
@@ -52,8 +50,7 @@ extern "C"
  */
 CAResult_t CAInitializeLE(CARegisterConnectivityCallback registerCallback,
                           CANetworkPacketReceivedCallback reqRespCallback,
-                          CAAdapterChangeCallback netCallback,
-                          CAConnectionChangeCallback connCallback,
+                          CANetworkChangeCallback netCallback,
                           CAErrorHandleCallback errorCallback,
                           ca_thread_pool_t handle);
 

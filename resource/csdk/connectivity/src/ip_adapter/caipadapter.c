@@ -68,7 +68,7 @@ static CANetworkPacketReceivedCallback g_networkPacketCallback = NULL;
 /**
  * Network Changed Callback to CA.
  */
-static CAAdapterChangeCallback g_networkChangeCallback = NULL;
+static CANetworkChangeCallback g_networkChangeCallback = NULL;
 
 /**
  * error Callback to CA adapter.
@@ -137,16 +137,10 @@ void CAIPDeinitializeQueueHandles()
 
 #endif // SINGLE_THREAD
 
-void CAIPConnectionStateCB(CATransportAdapter_t adapter, CANetworkStatus_t status)
+void CAIPConnectionStateCB(const char *ipAddress, CANetworkStatus_t status)
 {
-    if (g_networkChangeCallback)
-    {
-        g_networkChangeCallback(adapter, status);
-    }
-    else
-    {
-        OIC_LOG(ERROR, TAG, "g_networkChangeCallback is NULL");
-    }
+    (void)ipAddress;
+    (void)status;
 }
 
 #ifdef __WITH_DTLS__
@@ -221,7 +215,7 @@ static void CAInitializeIPGlobals()
 
 CAResult_t CAInitializeIP(CARegisterConnectivityCallback registerCallback,
                           CANetworkPacketReceivedCallback networkPacketCallback,
-                          CAAdapterChangeCallback netCallback,
+                          CANetworkChangeCallback netCallback,
                           CAErrorHandleCallback errorCallback, ca_thread_pool_t handle)
 {
     OIC_LOG(DEBUG, TAG, "IN");
@@ -240,9 +234,6 @@ CAResult_t CAInitializeIP(CARegisterConnectivityCallback registerCallback,
     caglobals.ip.threadpool = handle;
 
     CAIPSetPacketReceiveCallback(CAIPPacketReceivedCB);
-#ifndef SINGLE_THREAD
-    CAIPSetConnectionStateChangeCallback(CAIPConnectionStateCB);
-#endif
 #ifdef __WITH_DTLS__
     CAAdapterNetDtlsInit();
 
