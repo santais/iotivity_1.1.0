@@ -46,7 +46,7 @@ public:
     /**
      * @brief ~ResourceObject     Destructor. Currently not used.
      */
-    ~ResourceObject() {}
+    ~ResourceObject();
 
     /**
      * @brief getAttributes
@@ -87,6 +87,11 @@ public:
      * @brief stopCaching Stop caching the deivce
      */
     void stopCaching();
+
+    /**
+     * @brief Destroys the hold resource object
+     */
+    void destroyResourceObject();
 
 private:
 

@@ -18,7 +18,7 @@ namespace OIC { namespace Service
         m_resourceObjectStateCallback(std::bind(&Controller::resourceObjectStateCallback, this, std::placeholders::_1,
                                            std::placeholders::_2, std::placeholders::_3))
 	{
-        this->configurePlatform();
+        //this->configurePlatform();
 
         // Set up the scene and the collection
         SceneList::getInstance()->setName("Office");
@@ -65,7 +65,18 @@ namespace OIC { namespace Service
         //m_discoveryManagerBLE.discoverResource("", types, m_discoveryCallbackBLE, "", CT_ADAPTER_GATT_BTLE);
 
         // Start the discovery manager
-        return(this->startRD());
+        OCStackResult result = OC_STACK_OK;
+        if(startRD() != OC_STACK_OK)
+        {
+            result = OC_STACK_ERROR;
+        }
+        std::cout << "startRH" << std::endl;
+        if(startRH() != OC_STACK_OK)
+        {
+            result = OC_STACK_ERROR;
+        }
+
+        return result;
     }
     /**
       * @brief Stop the Controller
@@ -113,7 +124,7 @@ namespace OIC { namespace Service
     void Controller::configurePlatform()
     {
         // Create PlatformConfig object
-        PlatformConfig cfg {
+        /*PlatformConfig cfg {
             OC::ServiceType::InProc,
             OC::ModeType::Both,
             "0.0.0.0", // By setting to "0.0.0.0", it binds to all available interfaces
@@ -121,7 +132,8 @@ namespace OIC { namespace Service
             OC::QualityOfService::HighQos
         };
 
-        OCPlatform::Configure(cfg);
+        OCPlatform::Configure(cfg);*/
+        OCStackResult result = OCInit(NULL, 0, OC_CLIENT_SERVER);
     }
 
     /**
@@ -215,6 +227,12 @@ namespace OIC { namespace Service
       */
     OCStackResult Controller::startRD()
     {
+        OCStackResult result = OCInit(NULL, 0, OC_CLIENT_SERVER);
+
+        if(result != OC_STACK_OK)
+        {
+            std::cout << "Failed to setup platform!" << std::endl;
+        }
         std::cout << "Inside startRD" << std::endl;
         if(!m_RDStarted)
         {
@@ -249,6 +267,45 @@ namespace OIC { namespace Service
             }
         }
 
+        return OC_STACK_OK;
+    }
+
+    /**
+     * Start the Resource Host. It looks for resource with device type
+     * oic.r.resourcehosting
+     *
+     * @return
+     */
+    OCStackResult Controller::startRH()
+    {
+        std::cout << "Starting Resource Hosting service" << std::endl;
+
+        if (OICStartCoordinate() != OC_STACK_OK)
+        {
+            std::cout << "Resource hosting failed" << std::endl;
+            return OC_STACK_ERROR;
+        }
+
+        std::cout << "Resource Hosting service started successfully" << std::endl;
+        return OC_STACK_OK;
+    }
+
+    /**
+     * Stop the Resource Host.
+     *
+     * @return
+     */
+    OCStackResult Controller::stopRH()
+    {
+        if (OICStopCoordinate() != OC_STACK_OK)
+        {
+            std::cout << "Resource Hosting service stopped failed" << std::endl;
+            return OC_STACK_ERROR;
+        }
+        else
+        {
+            std::cout << "Resource Hosting service stopped successfully" << std::endl;
+        }
         return OC_STACK_OK;
     }
 
@@ -380,7 +437,7 @@ namespace OIC { namespace Service
         else if(uri.size() > HOSTING_TAG_SIZE)
         {
             if (uri.compare(
-                    uri.size()-HOSTING_TAG_SIZE, HOSTING_TAG_SIZE, HOSTING_TAG) == 0)
+                    uri.size()-HOSTING_TAG_SIZE, HOSTING_TAG_SIZE, HOST_TAG) == 0)
             {
                 std::cout << "Device: " << uri << " is not a legit device. Device is hosting" << std::endl;
                 return false;
@@ -413,6 +470,11 @@ namespace OIC { namespace Service
             {
                 m_sceneStart->addNewSceneAction(resource, "power", true);
                 m_sceneStop->addNewSceneAction(resource, "power", false);
+            }
+            else if(type.compare(MP_TYPE_TV_MODE) == 0)
+            {
+                m_sceneStart->addNewSceneAction(resource, "tvMode", "TV_ON");
+                m_sceneStop->addNewSceneAction(resource, "tvMode", "TV_OFF");
             }
         }
     }
@@ -482,14 +544,24 @@ namespace OIC { namespace Service
         case ResourceState::LOST_SIGNAL:
         case ResourceState::DESTROYED:
             {
-                std::cout << "Lost Signal " << std::endl;
+                std::cout << "Lost Signal to " << uri << std::endl;
 
                 // Find the resource and remove it from the list
-                ResourceKey resourceKey = uri + address;
-                if(m_resourceList.erase(resourceKey) > 0)
+               /* ResourceKey resourceKey = uri + address;
+
+                // Find the object
+                std::unordered_map<ResourceKey, ResourceObject::Ptr>::const_iterator object = m_resourceList.find(resourceKey);
+                if( object == m_resourceList.end())
                 {
-                    std::cout << "Removed resource: " << uri << std::endl;
+                    std::cout << "Object not found!" << std::endl;
                 }
+                else
+                {
+                    // Destroy the object
+                    std::cout << "Resetting resource object " << std::endl;
+                    ResourceObject::Ptr resource = m_resourceList.erase(object)->second;
+                    resource.reset();
+                }*/
             }
             break;
 
