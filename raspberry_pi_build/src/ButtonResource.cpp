@@ -5,7 +5,7 @@ ButtonResource::ButtonResource()
 {
     // Not initialized
 #ifdef ARM
-    wiringPiSetup();
+  //  wiringPiSetup();
     m_inputPortPin = -1;
 #endif
 }
@@ -24,7 +24,7 @@ ButtonResource::ButtonResource(int portPin, const std::string &uri)
 
     // Initialize pins
 #ifdef ARM
-    wiringPiSetup();
+//    wiringPiSetup();
     pinMode(portPin, OUTPUT);
 #endif
 }
@@ -151,14 +151,14 @@ void ButtonResource::setRequestHandler(const RCSRequest &request, RCSResourceAtt
         {
             std::cout << "\t Key: State is set to TRUE" << std::endl;
 #ifdef ARM
-            digitalRead(m_inputPortPin, HIGH);
+//            digitalRead(m_inputPortPin, HIGH);
 #endif 
         }
         else if (attrs["state"] == false)
         {
             std::cout << "\t Key: State is set to FALSE" << std::endl;
 #ifdef ARM
-            digitalRead(m_inputPortPin, LOW);
+//            digitalRead(m_inputPortPin, LOW);
 #endif
         }
         else
