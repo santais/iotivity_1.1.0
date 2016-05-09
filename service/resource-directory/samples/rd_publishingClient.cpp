@@ -27,10 +27,9 @@
 
 using namespace OC;
 
-OCResourceHandle g_curResource_t = NULL;
 OCResourceHandle g_curResource_l = NULL;
-char rdAddress[MAX_ADDR_STR_SIZE];
-uint16_t rdPort;
+char g_rdAddress[MAX_ADDR_STR_SIZE];
+uint16_t g_rdPort;
 
 bool waitRdDiscovery = false;
 
@@ -136,23 +135,10 @@ void registerLocalResources()
     }
 }
 
-void printHelp()
-{
-    std::cout << std::endl;
-    std::cout << "********************************************" << std::endl;
-    std::cout << "*  method Type : 1 - Discover RD           *" << std::endl;
-    std::cout << "*  method Type : 2 - Publish               *" << std::endl;
-    std::cout << "*  method Type : 3 - Update                *" << std::endl;
-    std::cout << "*  method Type : 4 - Delete                *" << std::endl;
-    std::cout << "*  method Type : 5 - Status                *" << std::endl;
-    std::cout << "********************************************" << std::endl;
-    std::cout << std::endl;
-}
-
 int biasFactorCB(char addr[MAX_ADDR_STR_SIZE], uint16_t port)
 {
-    OICStrcpy(rdAddress, MAX_ADDR_STR_SIZE, addr);
-    rdPort = port;
+    OICStrcpy(g_rdAddress, MAX_ADDR_STR_SIZE, addr);
+    g_rdPort = port;
     std::cout << "RD Address is : " <<  addr << ":" << port << std::endl;
     waitRdDiscovery = true;
     return 0;
@@ -198,7 +184,7 @@ int main()
             }
 
             std::cout << "Found RD!" << std::endl;
-
+            OCRDPublish(g_rdAddress, g_rdPort, 1, g_curResource_l);
             while(OCProcess() == OC_STACK_OK)
             {
                 sleep(0.1);

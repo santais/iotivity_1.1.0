@@ -39,14 +39,12 @@ static OCStackResult sendRequest(OCMethod method, char *uri, OCDevAddr *addr,
     OCDoHandle handle;
     OCStackResult result;
 
-    printf("Inside sendRequest");
-
     result = OCDoResource(&handle,
         method,
         uri,
         addr,
         payload,
-        CT_ADAPTER_IP,
+        CT_DEFAULT,
         OC_LOW_QOS,
         &cbData,
         NULL,
@@ -58,6 +56,7 @@ static OCStackResult sendRequest(OCMethod method, char *uri, OCDevAddr *addr,
     }
     else
     {
+        printf("Resource Directory send failed...\n");
         OIC_LOG(ERROR, TAG, "Resource Directory send failed...");
     }
 
