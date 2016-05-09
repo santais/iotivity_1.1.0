@@ -27,6 +27,10 @@ rpi_env.AppendUnique(CPPPATH = ['../service/resource-encapsulation/src/common/pr
 rpi_env.AppendUnique(CPPPATH = ['../service/resource-encapsulation/src/common/expiryTime/include'])
 rpi_env.AppendUnique(CPPPATH = ['../service/resource-directory/include'])
 rpi_env.AppendUnique(CPPPATH = ['../service/controller/include'])
+rpi_env.AppendUnique(CPPPATH = ['../service/resource-directory/include'])
+rpi_env.AppendUnique(CPPPATH = ['../resource/csdk/stack/include/internal'])
+rpi_env.AppendUnique(CPPPATH = ['../resource/csdk/stack/include'])
+rpi_env.AppendUnique(CPPPATH = ['../resource/csdk/connectivity/api'])
 
 
 rpi_env.AppendUnique(LIBS = [
@@ -39,7 +43,8 @@ rpi_env.AppendUnique(LIBS = [
 	'connectivity_abstraction',
 	'libcoap',
 	'resource_directory',
-	'libcontroller'		# Has the configuration files
+	'libcontroller',		# Has the configuration files
+	'resource_directory'
 	])
 
 #rpi_env.PrependUnique(LIBS = 'resource_directory')
@@ -52,7 +57,7 @@ if 'rt' in rpi_env.get('LIBS'):
 if env.get('TARGET_ARCH') == 'arm':
 	rpi_env.AppendUnique(CPPDEFINES = ['arm'])
 
-rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall', '-fmessage-length=0', '-std=c++0x', '-Wno-error'])
+rpi_env.AppendUnique(CXXFLAGS = ['-O2', '-g', '-Wall',  '-Wextra', '-fmessage-length=0', '-std=c++0x', '-Wno-error'])
 rpi_env.AppendUnique(LINKFLAGS = ['-Wl,--no-undefined'])
 rpi_env.AppendUnique(LIBS = ['pthread'])
 

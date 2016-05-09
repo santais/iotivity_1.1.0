@@ -1,13 +1,19 @@
-#include "ocbaseresource.h"
 #include "resource_types.h"
 #include <stdlib.h>
 #include <string>
 #include <signal.h>
 #include <unistd.h>
+#include "oic_string.h"
+
+#include "OCPlatform.h"
+#include "OCApi.h"
+#include <iostream>
 
 #include "rd_client.h"
 
-OCBaseResourceT* g_lightResource;
+using namespace OC;
+
+OCResourceHandle g_lightResource;
 char g_rdAddress[MAX_ADDR_STR_SIZE];
 uint16_t g_rdPort;
 
@@ -21,115 +27,106 @@ void handleSigInt(int signum)
     }
 }
 
-void lightIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResourceHandle handle, bool *underObservation)
+void registerLocalResources()
 {
-    if(port->type == OUTPUT)
+    std::string resourceURI_light = "/a/light";
+    std::string resourceTypeName_light = "oic.d.light";
+    std::string resourceInterface = OC_RSRVD_INTERFACE_DEFAULT;
+    uint8_t resourceProperty = OC_DISCOVERABLE;
+
+    OCStackResult result = OC::OCPlatform::registerResource(g_lightResource,
+                                          resourceURI_light,
+                                          resourceTypeName_light,
+                                          resourceInterface,
+                                          NULL,
+                                          resourceProperty);
+
+    if (OC_STACK_OK != result)
     {
-        bool power(false);
-        int brightness(0);
-       // OIC_LOG(DEBUG, TAG, "LightIOHandler: OUTPUT");
-        OCRepPayloadValue *current = attribute;
-        while(current != NULL)
-        {
-            //OIC_LOG_V(DEBUG, TAG, "Attribute name: %s", current->name);
-            //OIC_LOG(DEBUG, TAG, "Searching light");
-            if(strcmp(current->name, "power") == 0)
-            {
-                power = current->b;
-            }
-            else if (strcmp(current->name, "brightness") == 0)
-            {
-                brightness = current->i;
-            }
-
-            current = current->next;
-        }
-
-        if(power)
-        {
-            analogWrite(port->pin, brightness);
-        }
-        else
-        {
-            analogWrite(port->pin, 0);
-        }
-
-        if(*underObservation)
-        {
-            OIC_LOG(DEBUG, TAG, "LIGHT: Notifying observers");
-            if(OCNotifyAllObservers(handle, OC_LOW_QOS) == OC_STACK_NO_OBSERVERS)
-            {
-                OIC_LOG(DEBUG, TAG, "No more observers!");
-                *underObservation = false;
-            }
-        }
+        throw std::runtime_error(
+            std::string("Device Resource failed to start") + std::to_string(result));
     }
-}
-
-void createLightResource()
-{
-    OIC_LOG(DEBUG, TAG, "Creating resource");
-
-    OCIOPort portLight;
-    portLight.pin = TEST_LED_PIN; // LED_PIN for debug
-    portLight.type = OUT;
-
-    // Light resource
-    g_lightResource = createResource("/a/light", OIC_DEVICE_LIGHT, OC_RSRVD_INTERFACE_DEFAULT,
-                                              (OC_DISCOVERABLE | OC_OBSERVABLE), lightIOHandler, &portLight);
-
-    if(g_lightResource != NULL)
-    {
-        OIC_LOG(INFO, TAG, "Light resource created successfully");
-        Serial.println((int)g_lightResource->handle, HEX);
-    }
-    else
-    {
-        OIC_LOG(DEBUG, TAG, "Unable to create light resource");
-    }
-    g_lightResource->name = "Mark's Light";
-
-    addType(g_lightResource, OIC_TYPE_BINARY_SWITCH);
-    addType(g_lightResource, OIC_TYPE_LIGHT_BRIGHTNESS);
-
-    OCRepPayloadValue powerValue;
-    powerValue.b = true;
-    powerValue.name = "power";
-    powerValue.next = NULL;
-    powerValue.type = OCREP_PROP_BOOL;
-    addAttribute(&g_lightResource->attribute, &powerValue);
-
-
-    OCRepPayloadValue brightnessValue;
-    brightnessValue.i = 255;
-    brightnessValue.name = "brightness";
-    brightnessValue.next = NULL;
-    brightnessValue.type = OCREP_PROP_INT;
-    addAttribute(&g_lightResource->attribute, &brightnessValue);
-
 }
 
 int biasFactorCB(char addr[MAX_ADDR_STR_SIZE], uint16_t port)
 {
-    OICStrcpy(rdAddress, MAX_ADDR_STR_SIZE, addr);
-    rdPort = port;
+    OICStrcpy(g_rdAddress, MAX_ADDR_STR_SIZE, addr);
+    g_rdPort = port;
     std::cout << "RD Address is : " <<  addr << ":" << port << std::endl;
     return 0;
 }
-
-
+/*
 int main()
 {
-    printf("Starting Light Constrained Program");
-
+    int in;
     PlatformConfig cfg;
 
     OCPlatform::Configure(cfg);
 
-    if(OCStartPresence(60 * 60) != OC_STACK_OK)
+    std::cout << "Created Platform..." << std::endl;
+
+    try
     {
-        OIC_LOG(ERROR, TAG, "Unable to start presence server");
+        registerLocalResources();
     }
+    catch (std::runtime_error e)
+    {
+        std::cout << "Caught OCException [Code: " << e.what() << std::endl;
+    }
+
+    while (1)
+    {
+        sleep(2);
+
+        if (g_lightResource != NULL)
+        {
+            continue;
+        }
+
+        in = 0;
+        std::cin >> in;
+
+        if (std::cin.fail())
+        {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input type, please try again" << std::endl;
+            continue;
+        }
+
+        try
+        {
+            switch ((int)in)
+            {
+                case 1:
+                    OCRDDiscover(biasFactorCB);
+                    break;
+                case 2:
+                    OCRDPublish(g_rdAddress, g_rdPort, 1, g_lightResource);
+                    break;
+                case 3:
+                    break;
+                default:
+                    std::cout << "Invalid input, please try again" << std::endl;
+                    break;
+            }
+        }
+        catch (OCException e)
+        {
+            std::cout << "Caught OCException [Code: " << e.code() << " Reason: " << e.reason() << std::endl;
+        }
+    }
+    return 0;
+}*/
+
+
+int main()
+{
+    std:cout << "Starting platform setup" << std::endl;
+
+    OC::PlatformConfig cfg;
+
+    OC::OCPlatform::Configure(cfg);
 
     std::cout << "Setup completed" << std::endl;
     signal(SIGINT, handleSigInt);
@@ -137,8 +134,15 @@ int main()
     while(OCRDDiscover(biasFactorCB) != OC_STACK_OK);
 
     // RD discovered. Publisher resources
-    createLightResource();
-    OCRDPublish(g_rdAddress, g_rdPort, 1, g_lightResource->handle);
+    std::cout << "Creating resource" << std::endl;
+    registerLocalResources();
+    OCRDPublish(g_rdAddress, g_rdPort, 1, g_lightResource);
+
+    if(OCStartPresence(60 * 60) != OC_STACK_OK)
+    {
+        //OIC_LOG(ERROR, TAG, "Unable to start presence server");
+    }
+
     while(!g_quitFlag)
     {
         if(OCProcess() != OC_STACK_OK)

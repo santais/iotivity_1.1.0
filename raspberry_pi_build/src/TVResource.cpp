@@ -100,7 +100,7 @@ std::string TVResource::getUri()
 void TVResource::setRequestHandler(const RCSRequest &request, RCSResourceAttributes &attrs)
 {
     // Lookup the power attribute
-    std:cout << "============================================ \n";
+    std::cout << "============================================ \n";
         std::cout << "New attributes are:" << std::endl;
         for(const auto& attr : attrs)
         {
