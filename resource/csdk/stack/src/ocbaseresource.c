@@ -278,6 +278,7 @@ OCBaseResourceT * createResource(char* uri, OCResourceType* type, OCResourceInte
 {
     // Create the resource
     OIC_LOG_V(DEBUG, TAG, "Creating resource with uri: %s\n", uri);
+    OIC_LOG(DEBUG, TAG, "Entering createResource...");
 
     OCBaseResourceT *resource = (OCBaseResourceT*)malloc(sizeof(OCBaseResourceT));
     if(resource == NULL) {printNoMemoryMsg(); return NULL;}
@@ -311,6 +312,8 @@ OCBaseResourceT * createResource(char* uri, OCResourceType* type, OCResourceInte
 
     if(res != OC_STACK_OK) 
     {
+      OIC_LOG(ERROR, TAG, "Error calling OCCreateResource. Error code is: \n");
+      Serial.println(getOCStackResult(res));
       return NULL;
     }
 

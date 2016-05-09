@@ -67,7 +67,7 @@ typedef enum {
     FATAL = DLOG_ERROR
 } LogLevel;
 #else
-typedef enum {
+typedef enum  {
     DEBUG = 0,
     INFO,
     WARNING,
