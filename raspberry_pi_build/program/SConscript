@@ -32,7 +32,7 @@ rpi_env.AppendUnique(CPPPATH = ['../../service/resource-directory/include'])
 
 	
 
-if target_arch in 'ARM':
+if target_arch in 'arm':
 	rpi_env.AppendUnique(LIBS = [
 		'rcs_client',
 		'rcs_server',

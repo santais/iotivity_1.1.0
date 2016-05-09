@@ -33,19 +33,31 @@ rpi_env.AppendUnique(CPPPATH = ['../resource/csdk/stack/include'])
 rpi_env.AppendUnique(CPPPATH = ['../resource/csdk/connectivity/api'])
 
 
-rpi_env.AppendUnique(LIBS = [
-	'rcs_client',
-	'rcs_server',
-	'rcs_common',
-	'oc',
-	'octbstack',
-	'oc_logger',
-	'connectivity_abstraction',
-	'libcoap',
-	'resource_directory',
-	'libcontroller',		# Has the configuration files
-	'resource_directory'
-	])
+if env.get('TARGET_ARCH') == 'arm':
+	rpi_env.AppendUnique(LIBS = [
+		'rcs_client',
+		'rcs_server',
+		'rcs_common',
+		'oc',
+		'octbstack',
+		'oc_logger',
+		'connectivity_abstraction',
+		'libcoap',
+		'libcontroller',		# Has the configuration files
+		'wiringPi'
+		])
+else
+	rpi_env.AppendUnique(LIBS = [
+		'rcs_client',
+		'rcs_server',
+		'rcs_common',
+		'oc',
+		'octbstack',
+		'oc_logger',
+		'connectivity_abstraction',
+		'libcoap',
+		'libcontroller'		# Has the configuration files
+		])
 
 #rpi_env.PrependUnique(LIBS = 'resource_directory')
 
