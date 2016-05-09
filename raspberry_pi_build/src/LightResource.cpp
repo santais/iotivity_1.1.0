@@ -160,7 +160,7 @@ void LightResource::setHostingResource()
 void LightResource::setRequestHandler(const RCSRequest &request, RCSResourceAttributes &attrs)
 {
     // Lookup the power attribute
-    std:cout << "============================================ \n";
+    std::cout << "============================================ \n";
     if(m_outputPortPin >=    0)
     {
         if(attrs["power"] == true)

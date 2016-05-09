@@ -144,7 +144,7 @@ std::string ButtonResource::getUri()
 void ButtonResource::setRequestHandler(const RCSRequest &request, RCSResourceAttributes &attrs)
 {
     // Lookup the state attribute
-    std:cout << "============================================ \n";
+    std::cout << "============================================ \n";
     if(m_inputPortPin >= 0)
     {
         if(attrs["state"] == true)
@@ -152,7 +152,7 @@ void ButtonResource::setRequestHandler(const RCSRequest &request, RCSResourceAtt
             std::cout << "\t Key: State is set to TRUE" << std::endl;
 #ifdef ARM
             digitalRead(m_inputPortPin, HIGH);
-#endif ARM
+#endif 
         }
         else if (attrs["state"] == false)
         {
