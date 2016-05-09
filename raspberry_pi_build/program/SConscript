@@ -104,12 +104,12 @@ elif target_arch == 'x86_64':
 ######################################################################
 RpiMain = rpi_env.Program('resource_test', 'resource_test.cpp')
 RpiMain = rpi_env.Program('controller', 'controller.cpp')
-RpiMain = rpi_env.Program('boostrapserver', 'bootstrapserver.cpp')
+RpiMain = rpi_env.Program('BootstrapServer', 'bootstrapserver.cpp')
 
-RpiMain = rpi_env.Program('tvResource', 'tvResource.cpp')
-RpiMain = rpi_env.Program('buttonLightresource', 'ButtonLightResource.cpp')
+RpiMain = rpi_env.Program('TVResource', 'tvResource.cpp')
+RpiMain = rpi_env.Program('ButtonLightResource', 'ButtonLightResource.cpp')
 
-RpiMain = rpi_env.Program('lightConstrainedResource', 'LightResourceConstrained.cpp')
+RpiMain = rpi_env.Program('LightResourceHosting', 'LightResourceHosting.cpp')
 
 
 rpi_env.InstallTarget(RpiMain, 'resource_test')

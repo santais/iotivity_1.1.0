@@ -29,6 +29,7 @@ ResourceObject::ResourceObject(RCSRemoteResourceObject::Ptr remoteResource)
  */
 ResourceObject::~ResourceObject()
 {
+    std::cout << __func__ << "Destructor called" << std::endl;
     m_resourceObject.reset();
     m_resourceObjectCacheCallback = nullptr;
     m_resourceObjectStateCallback = nullptr;

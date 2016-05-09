@@ -46,14 +46,16 @@
 #include "ResourceObject.hpp"
 #include "DiscoveryManager.h"
 
+#include "Hosting.h"
+
 // Scene-manager
 #include "SceneList.h"
 
 namespace OIC { namespace Service
 {
 
-    const std::string HOSTING_TAG = "/hosting";
-    const auto HOSTING_TAG_SIZE = HOSTING_TAG.size();
+    const std::string HOST_TAG = "/hosting";
+    const auto HOSTING_TAG_SIZE = HOST_TAG.size();
 
     constexpr cbTimer TIMER_BLE_DISCOVERY = 5000; // 5 seconds
 
@@ -214,6 +216,21 @@ namespace OIC { namespace Service
 		  * @return Result of the shutdown
 		  */
         OCStackResult stopRD();
+
+        /**
+         * Start the Resource Host. It looks for resource with device type
+         * oic.r.resourcehosting
+         *
+         * @return
+         */
+        OCStackResult startRH();
+
+        /**
+         * Stop the Resource Host.
+         *
+         * @return
+         */
+        OCStackResult stopRH();
 
         /**
          * @brief printAttributes Prints the attributes of a resource

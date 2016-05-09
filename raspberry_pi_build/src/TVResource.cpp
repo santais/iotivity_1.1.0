@@ -81,15 +81,24 @@ int TVResource::createResource()
     return 1;
 }
 
+/**
+ * @brief TVResource::setUri
+ * @param uri
+ */
 void TVResource::setUri(std::string& uri)
 {
     m_uri = uri;
 }
 
+/**
+ * @brief TVResource::getUri
+ * @return
+ */
 std::string TVResource::getUri()
 {
     return m_uri;
 }
+
 
 /**
  * @brief setRequestHandler

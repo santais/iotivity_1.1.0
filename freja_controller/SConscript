@@ -54,6 +54,8 @@ controller_env.AppendUnique(CPPPATH = ['../service/things-manager/sdk/inc']),
 controller_env.AppendUnique(CPPPATH = ['../service/things-manager/sdk/src'])
 controller_env.AppendUnique(CPPPATH = ['../service/things-manager/sdk/inc']),
 controller_env.AppendUnique(CPPPATH = ['../service/things-manager/sampleapp/linux/configuration/'])
+controller_env.AppendUnique(CPPPATH = ['../service/resource-hosting/include'])
+controller_env.AppendUnique(CPPPATH = ['../service/resource-hosting/src'])
 controller_env.AppendUnique(CPPPATH = ['../extlibs/timer'])
 
 # RD
@@ -72,7 +74,8 @@ controller_env.AppendUnique(LIBS = [
     'connectivity_abstraction',
     'libcoap',
     'libTGMSDKLibrary',
-    'dl'
+    'dl',
+    'resource_hosting'
     ])
 
 controller_env.PrependUnique(LIBS = 'resource_directory')

@@ -46,9 +46,22 @@ public:
      */
     int createResource();
 
+    /**
+     * @brief setUri
+     * @param uri
+     */
     void setUri(std::string& uri);
 
+    /**
+     * @brief getUri
+     * @return
+     */
     std::string getUri();
+
+    /**
+     * @brief setHostingResource
+     */
+    void setHostingResource();
 
 private:
     /**
@@ -65,6 +78,11 @@ private:
      * @brief m_uri
      */
     std::string m_uri;
+
+    /**
+     * @brief m_hosting
+     */
+    bool m_hosting;
 
 private:
     /**

@@ -1,7 +1,8 @@
 #include "LightResource.h"
 #include "resource_types.h"
 
-LightResource::LightResource()
+LightResource::LightResource() :
+    m_hosting(false)
 {
     // Not initialized
 #ifdef ARM
@@ -16,7 +17,8 @@ LightResource::LightResource()
  * @param portPin
  * @param uri       Uri of the new light resource
  */
-LightResource::LightResource(int portPin, const std::string &uri)
+LightResource::LightResource(int portPin, const std::string &uri) :
+    m_hosting(false)
 {
     m_uri = uri;
 
@@ -101,10 +103,15 @@ int LightResource::createResource()
         return -1;
     }
     // Using default parameters
-    std::vector<std::string> resource_types = {OIC_DEVICE_LIGHT, OIC_TYPE_BINARY_SWITCH};
+    std::vector<std::string> resourceTypes = {OIC_DEVICE_LIGHT, OIC_TYPE_BINARY_SWITCH};
+
+    if(m_hosting)
+    {
+        resourceTypes.push_back(OIC_TYPE_RESOURCE_HOST);
+    }
 
     m_resource = std::make_shared<RPIRCSResourceObject>(RPIRCSResourceObject(m_uri,
-                            std::move(resource_types), std::move(std::vector<std::string> {OC_RSRVD_INTERFACE_DEFAULT})));
+                            std::move(resourceTypes), std::move(std::vector<std::string> {OC_RSRVD_INTERFACE_DEFAULT})));
 
     m_resource->createResource(true, true, false);
 
@@ -117,14 +124,31 @@ int LightResource::createResource()
     return 1;
 }
 
+/**
+ * @brief LightResource::setUri
+ * @param uri
+ */
 void LightResource::setUri(std::string& uri)
 {
     m_uri = uri;
 }
 
+/**
+ * @brief LightResource::getUri
+ * @return
+ */
 std::string LightResource::getUri()
 {
     return m_uri;
+}
+
+
+/**
+ * @brief setHostingResource
+ */
+void LightResource::setHostingResource()
+{
+    m_hosting = true;
 }
 
 /**

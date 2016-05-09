@@ -65,7 +65,18 @@ namespace OIC { namespace Service
         //m_discoveryManagerBLE.discoverResource("", types, m_discoveryCallbackBLE, "", CT_ADAPTER_GATT_BTLE);
 
         // Start the discovery manager
-        return(startRD());
+        OCStackResult result = OC_STACK_OK;
+        if(startRD() != OC_STACK_OK)
+        {
+            result = OC_STACK_ERROR;
+        }
+        std::cout << "startRH" << std::endl;
+        if(startRH() != OC_STACK_OK)
+        {
+            result = OC_STACK_ERROR;
+        }
+
+        return result;
     }
     /**
       * @brief Stop the Controller
@@ -260,6 +271,45 @@ namespace OIC { namespace Service
     }
 
     /**
+     * Start the Resource Host. It looks for resource with device type
+     * oic.r.resourcehosting
+     *
+     * @return
+     */
+    OCStackResult Controller::startRH()
+    {
+        std::cout << "Starting Resource Hosting service" << std::endl;
+
+        if (OICStartCoordinate() != OC_STACK_OK)
+        {
+            std::cout << "Resource hosting failed" << std::endl;
+            return OC_STACK_ERROR;
+        }
+
+        std::cout << "Resource Hosting service started successfully" << std::endl;
+        return OC_STACK_OK;
+    }
+
+    /**
+     * Stop the Resource Host.
+     *
+     * @return
+     */
+    OCStackResult Controller::stopRH()
+    {
+        if (OICStopCoordinate() != OC_STACK_OK)
+        {
+            std::cout << "Resource Hosting service stopped failed" << std::endl;
+            return OC_STACK_ERROR;
+        }
+        else
+        {
+            std::cout << "Resource Hosting service stopped successfully" << std::endl;
+        }
+        return OC_STACK_OK;
+    }
+
+    /**
      * @brief printAttributes Prints the attributes of a resource
      *
      * @param attr          Attributes to be printed
@@ -387,7 +437,7 @@ namespace OIC { namespace Service
         else if(uri.size() > HOSTING_TAG_SIZE)
         {
             if (uri.compare(
-                    uri.size()-HOSTING_TAG_SIZE, HOSTING_TAG_SIZE, HOSTING_TAG) == 0)
+                    uri.size()-HOSTING_TAG_SIZE, HOSTING_TAG_SIZE, HOST_TAG) == 0)
             {
                 std::cout << "Device: " << uri << " is not a legit device. Device is hosting" << std::endl;
                 return false;
@@ -489,13 +539,13 @@ namespace OIC { namespace Service
         case ResourceState::LOST_SIGNAL:
         case ResourceState::DESTROYED:
             {
-                std::cout << "Lost Signal " << std::endl;
+                std::cout << "Lost Signal to " << uri << std::endl;
 
                 // Find the resource and remove it from the list
-                ResourceKey resourceKey = uri + address;
+               /* ResourceKey resourceKey = uri + address;
 
                 // Find the object
-                std::unordered_map<ResourceKey, ResourceObject::Ptr>::const_iterator object = m_resourceList.find (input);
+                std::unordered_map<ResourceKey, ResourceObject::Ptr>::const_iterator object = m_resourceList.find(resourceKey);
                 if( object == m_resourceList.end())
                 {
                     std::cout << "Object not found!" << std::endl;
@@ -504,14 +554,9 @@ namespace OIC { namespace Service
                 {
                     // Destroy the object
                     std::cout << "Resetting resource object " << std::endl;
-                    ResourceObject::Ptr resource = got->second;
+                    ResourceObject::Ptr resource = m_resourceList.erase(object)->second;
                     resource.reset();
-                }
-
-                if(m_resourceList.erase(resourceKey) > 0)
-                {
-                    std::cout << "Removed resource: " << uri << std::endl;
-                }
+                }*/
             }
             break;
 
