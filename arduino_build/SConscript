@@ -76,7 +76,7 @@ i_arduino_simplecs = arduino_simplecs_env.Install(env.get('BUILD_DIR'), arduino_
 arduino_simplecs_env.Clean(arduino_simplecs, 'arduinoLightServer.map')
 arduino_simplecs_env.Clean(arduino_simplecs, 'arduinoTemperatureServer.map')
 
-Alias('arduino_simplecs', i_arduino_simplecs)
+#Alias('arduino_simplecs', i_arduino_simplecs)
 arduino_simplecs_env.AppendTarget('arduino_simplecs')
 
 if 'arduino_due_x' in env.get('BOARD'):

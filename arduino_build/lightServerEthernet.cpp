@@ -29,12 +29,12 @@ static const int DELAY_TIME_INPUT_THREAD = 10;      // ms
 static const char LED_PIN = 13;
 static const char TEST_LED_PIN = 5; // PWM Pin
 static const char TEST_BUT_PIN = 2;	
-static const char TEMPERATURE_PIN_IN = A1;
+static const char TEMPERATURE_PIN_IN = A2;
 
 static const float AREF = 3.3;
 static const int ADC_RES = 1024;
 static const float TEMPERATURE_CONSTANT = 10 / ((AREF * 100) / ADC_RES);
-static const int TEMPERATURE_OFFSET = 7;
+static const int TEMPERATURE_OFFSET = -20;
 
 static int g_prevButtonReading = false;
 #define TAG "ArduinoServer"
@@ -247,6 +247,7 @@ void temperatureIOHandler(OCRepPayloadValue *attribute, OCIOPort *port, OCResour
     // Read the ADC value
     if(port != NULL)
     {   
+        analogReadResolution(10);
         int reading = analogRead(port->pin);
         attribute->d = (reading / TEMPERATURE_CONSTANT) - TEMPERATURE_OFFSET;
     }
@@ -305,7 +306,7 @@ void createTemperature()
     // Temperature resource
     g_temperatureResource = createResource("/arduino/temperatureSensor", OIC_DEVICE_SENSOR, OC_RSRVD_INTERFACE_DEFAULT,
                                                       (OC_DISCOVERABLE | OC_OBSERVABLE), temperatureIOHandler, &port);
-
+    analogReference(AR_DEFAULT);
     if(g_temperatureResource != NULL)
     {
         OIC_LOG(DEBUG, TAG, "Temperature successfully created");
