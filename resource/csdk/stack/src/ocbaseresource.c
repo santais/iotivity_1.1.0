@@ -134,7 +134,7 @@ OCEntityHandlerResult observerHandler(OCEntityHandlerRequest *ehRequest, OCBaseR
  *
  * @return result of the entityHandler
  */
- OCEntityHandlerResult quest(OCBaseResourceT *resource, OCRepPayload *payload);
+ OCEntityHandlerResult getRequest(OCBaseResourceT *resource, OCRepPayload *payload);
 
  /**
  * @brief Called when a REST PUT is request
@@ -1002,7 +1002,7 @@ OCEntityHandlerResult observerHandler(OCEntityHandlerRequest *ehRequest, OCBaseR
  *
  * @return A string with the result
 */
- /*
+ 
 const char * getOCStackResult(OCStackResult result)
 {
    switch (result) {
@@ -1041,7 +1041,7 @@ const char * getOCStackResult(OCStackResult result)
     default:
         return "UNKNOWN";
     }
-}*/
+}
 
 /**
  * @brief Returns a string corrensponding to the request
